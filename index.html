@@ -5,8 +5,6 @@
   <title>Siemens Fiyat Kontrol v3.0</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script>
-    // Tasarım 1920px genişlik için yapıldı.
-    // Açıldığı ekranın genişliğine göre tarayıcı zoom'unu otomatik ayarla.
     (function() {
       var designWidth = 1920;
       var scale = window.screen.width / designWidth;
@@ -49,7 +47,7 @@
 <body>
 <div class="card">
   <div style="margin-bottom:10px; font-size:12px;">
-    <b>FİYAT LİSTESİ DURUMU:</b> <span id="statusMsg" style="font-weight:bold; color:#007bff;">Liste Yükleniyor, lütfen bekleyin...</span>
+    <b>FİYAT LİSTESİ DURUMU:</b> <span id="statusMsg" style="font-weight:bold; color:#007bff;">Liste Yükleniyor...</span>
   </div>
   <div class="search-container">
     <div class="autocomplete-wrapper">
@@ -89,7 +87,9 @@ function fullReset() {
 
 window.onload = async function() {
   try {
-    const response = await fetch('./fiyat.xlsx');
+    // BURADAKİ DOSYA ADINI GITHUB'DAKİ EXCEL DOSYANIZIN ADIYLA BİREBİR AYNI YAPIN
+    const response = await fetch('./fiyat_listesi.xlsx'); 
+    
     if (!response.ok) throw new Error("Dosya bulunamadı");
     
     const buffer = await response.arrayBuffer();
@@ -135,17 +135,15 @@ window.onload = async function() {
     phCol = heads.find(x => x.toUpperCase().includes("PHASE"));
     db = data;
 
-    // Fiyat sütunlarının başlangıç noktasını içinde "TOPTAN" geçen sütundan itibaren alıyoruz.
+    // SADECE BU KISIM EKLENDİ: Fiyat sütunlarının başlangıç noktasını "TOPTAN" kelimesine göre belirle
     let toptanIdx = heads.findIndex(h => h.toUpperCase().includes("TOPTAN"));
     priceStartIndex = (toptanIdx > -1) ? toptanIdx : 13;
 
-    document.getElementById('statusMsg').innerText =
-      `Liste Yüklendi. (${Object.keys(linkMap).length} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
+    document.getElementById('statusMsg').innerText = "Liste Yüklendi.";
 
     renderHeader();
   } catch (error) {
-    document.getElementById('statusMsg').innerText = "Fiyat listesi yüklenemedi! (fiyat.xlsx dosyası bulunamadı)";
-    document.getElementById('statusMsg').style.color = "red";
+    document.getElementById('statusMsg').innerText = "Liste Yüklenemedi!";
     console.error(error);
   }
 };
@@ -271,7 +269,6 @@ function refreshTable() {
       } else if (hT.includes("ONLINE")) {
         cells += `<td class="t-online-col">${v ? Math.ceil(v).toLocaleString('tr-TR') + ' ₺' : '-'}</td>`;
       } else {
-        // TOPTAN ile başlayan dinamik priceStartIndex kullanılıyor
         if (colIndex >= priceStartIndex && !isNaN(v) && v !== "") {
           cells += `<td>${Math.ceil(v).toLocaleString('tr-TR') + ' ₺'}</td>`;
         } else {
