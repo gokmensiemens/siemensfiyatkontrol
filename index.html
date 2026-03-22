@@ -89,7 +89,7 @@ function fullReset() {
 // Sayfa yüklendiğinde excel dosyasını otomatik çekip okuyacak fonksiyon
 window.onload = async function() {
   try {
-    const response = await fetch('./19_MART_2026.xlsx');
+    const response = await fetch('./22_MART_2026.xlsx');
     if (!response.ok) throw new Error("Dosya bulunamadı");
     
     const buffer = await response.arrayBuffer();
@@ -137,7 +137,7 @@ window.onload = async function() {
     db = data;
 
     document.getElementById('statusMsg').innerText =
-      `Kontrole Esas Fiyat Dosyası: 19 MART 2026. (${Object.keys(linkMap).length} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
+      `Kontrole Esas Fiyat Dosyası: 22 MART 2026. (${Object.keys(linkMap).length} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
 
     renderHeader();
   } catch (error) {
