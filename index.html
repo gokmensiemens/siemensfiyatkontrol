@@ -5,20 +5,21 @@
   <title>Siemens Fiyat Kontrol v3.0</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script>
-    // Tasarım 1920px genişlik için yapıldı.
-    // Açıldığı ekranın genişliğine göre tarayıcı zoom'unu otomatik ayarla.
+    // SADECE EKRAN 768px'DEN BÜYÜKSE (MASAÜSTÜYSE) ZOOM YAP. MOBİLİ KÜÇÜLTME.
     (function() {
       var designWidth = 1920;
-      var scale = window.screen.width / designWidth;
-      if (scale < 1) {
-        document.documentElement.style.zoom = scale;
+      if (window.innerWidth > 768) {
+        var scale = window.innerWidth / designWidth;
+        if (scale < 1) {
+          document.documentElement.style.zoom = scale;
+        }
       }
     })();
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 5px; }
-    .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 98vw; margin: auto; }
+    .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 98vw; margin: auto; box-sizing: border-box; }
     .search-container { width: 100%; margin: 15px 0; display: flex; gap: 10px; align-items: stretch; }
     .autocomplete-wrapper { position: relative; flex-grow: 1; display: flex; }
     #barcodeInp { width: 100%; box-sizing: border-box; padding: 20px; border: 4px solid #007bff; border-radius: 8px; font-size: 24px; font-weight: bold; background: #fffde7; }
@@ -26,7 +27,11 @@
     .autocomplete-items div { padding: 12px; cursor: pointer; border-bottom: 1px solid #d4d4d4; font-size: 16px; font-weight: 500; }
     .autocomplete-items div:hover { background-color: #e9e9e9; }
     .autocomplete-active { background-color: #007bff !important; color: #ffffff; }
-    table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
+    
+    /* Tablo kapsayıcısı (Mobilde sağa kaydırmak için) */
+    .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    
+    table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; min-width: 1200px; }
     th { background: #007bff; color: white; border: 1px solid #dee2e6; height: 60px; vertical-align: middle; padding: 2px; line-height: 1.2; font-weight: 600; }
     td { border: 1px solid #dee2e6; padding: 8px 2px; text-align: center; color: #333; font-size: 0.75vw; font-weight: 500; overflow: hidden; white-space: nowrap; }
     th:nth-child(1), td:nth-child(1) { width: 5.5vw; } 
@@ -44,6 +49,20 @@
     .t-partial { background: #fff3e0; color: #bf360c; font-weight: bold; font-size: 15px; }
     .p-link { color: #007bff !important; text-decoration: underline !important; font-weight: bold; cursor: pointer; display: block; white-space: normal; }
     .t-online-col { background: #eceff1; color: #455a64; font-weight: bold; }
+
+    /* --- MOBİL UYUMLULUK KODLARI --- */
+    @media (max-width: 768px) {
+      .card { width: 100%; padding: 10px; }
+      #barcodeInp { font-size: 16px; padding: 12px; }
+      .search-container { flex-direction: column; }
+      .search-container button { padding: 12px; font-size: 16px; }
+      td { font-size: 12px !important; white-space: normal; }
+      .f-title { font-size: 12px !important; }
+      .t-final { font-size: 13px !important; }
+      th:nth-child(1), td:nth-child(1) { width: 80px !important; } 
+      th:nth-child(2), td:nth-child(2) { width: 180px !important; } 
+      th:nth-child(n+3):nth-child(-n+15), td:nth-child(n+3):nth-child(-n+15) { width: 80px !important; } 
+    }
   </style>
 </head>
 <body>
@@ -57,11 +76,15 @@
     </div>
     <button onclick="fullReset();" style="background:#dc3545; color:white; border:none; border-radius:8px; cursor:pointer; padding:0 20px; font-weight:bold;">TEMİZLE</button>
   </div>
-  <table id="mainTable">
-    <thead id="hR"></thead>
-    <tbody id="bR"></tbody>
-    <tfoot id="fR"></tfoot>
-  </table>
+  
+  <div class="table-responsive">
+    <table id="mainTable">
+      <thead id="hR"></thead>
+      <tbody id="bR"></tbody>
+      <tfoot id="fR"></tfoot>
+    </table>
+  </div>
+
 </div>
 
 <script>
@@ -87,7 +110,6 @@ function fullReset() {
     closeAllLists();
 }
 
-// Sayfa yüklendiğinde excel dosyasını otomatik çekip okuyacak fonksiyon
 window.onload = async function() {
   try {
     const response = await fetch('./22_MART_2026.xlsx');
@@ -119,7 +141,6 @@ window.onload = async function() {
     heads = allKeys.filter(h => {
       let hU = h.toUpperCase();
       if (hU.includes("PRİM HARİÇ") || h.includes("__EMPTY")) return false;
-      // 3 TAKSİT (GARANTİ/WEB) ve 9 TAKSİT WEB TAHSİLAT sütunlarını kaldır
       if (hU.includes("3") && hU.includes("TAKSİT")) return false;
       if (hU.includes("9") && hU.includes("TAKSİT")) return false;
       return true;
@@ -141,7 +162,7 @@ window.onload = async function() {
     priceStartIndex = (toptanIdx > -1) ? toptanIdx : 13;
 
     document.getElementById('statusMsg').innerText =
-      `22 MART 2026. (${Object.keys(linkMap).length} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
+      `Kontrole Esas Fiyat Dosyası: 22 MART 2026. (${Object.keys(linkMap).length} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
 
     renderHeader();
   } catch (error) {
@@ -379,7 +400,6 @@ function renderFinalRow(t, bVal) {
 }
 
 function renderTaksitliRow() {
-  // Önce HAVALE kolonunun index'ini bul
   let havaleIdx = heads.findIndex(h => h.toUpperCase().includes("HAVALE"));
   let havaleVal = (havaleIdx > -1 && finalTotals[havaleIdx]) ? finalTotals[havaleIdx] : 0;
   let taksitVal = Math.ceil(havaleVal * 1.08);
@@ -391,7 +411,6 @@ function renderTaksitliRow() {
     if (hT.includes("HAVALE")) {
       return `<td style="background:#ede7f6; color:#4a148c; font-size:0.8vw; border:2px solid #7b1fa2 !important; font-weight:bold; white-space:nowrap;">${taksitVal > 0 ? taksitVal.toLocaleString('tr-TR') + ' ₺' : '-'}</td>`;
     }
-    // Diğer tüm kolonlar boş
     return `<td style="background:#ede7f6;"></td>`;
   }).join('');
 }
