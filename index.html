@@ -71,6 +71,7 @@ let bipCol = "", phCol = "";
 let linkMap = {}; 
 let currentFocus = -1;
 let priceStartIndex = 13;
+let firstFooterIdx = 13; // Alt toplamların başladığı ilk sütunu tutmak için
 
 const fixString = (str) => !str ? "" : String(str)
   .replace(/İ/g, 'i')
@@ -140,8 +141,12 @@ window.onload = async function() {
     let toptanIdx = heads.findIndex(h => h.toUpperCase().includes("TOPTAN"));
     priceStartIndex = (toptanIdx > -1) ? toptanIdx : 13;
 
+    // Alt toplamların başladığı sütunu (HAVALE veya ÇEKİM içeren ilk sütun) bul
+    firstFooterIdx = heads.findIndex(h => isFooterCol(h.toUpperCase()));
+    if (firstFooterIdx === -1) firstFooterIdx = priceStartIndex;
+
     document.getElementById('statusMsg').innerText =
-      `22 MART 2026. (${Object.keys(linkMap).length} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
+      `Kontrole Esas Fiyat Dosyası: 22 MART 2026. (${Object.keys(linkMap).length} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
 
     renderHeader();
   } catch (error) {
@@ -305,23 +310,23 @@ function calc() {
 
   document.getElementById('fR').innerHTML = `
     <tr>
-      <td colspan="${priceStartIndex}" class="f-title">TOPLAM LİSTE FİYATI</td>
+      <td colspan="${firstFooterIdx}" class="f-title">TOPLAM LİSTE FİYATI</td>
       ${renderCommonRow(t.base, 't-res')}
     </tr>
     <tr>
-      <td colspan="${priceStartIndex}" class="f-title">BİP İNDİRİMİ - (VARSA PHASE OUT)</td>
+      <td colspan="${firstFooterIdx}" class="f-title">BİP İNDİRİMİ - (VARSA PHASE OUT)</td>
       ${renderCommonRow(null, 't-res', t.disc)}
     </tr>
     <tr>
-      <td colspan="${priceStartIndex}" class="f-title" style="color:red;">TOPLAM BUNDLE HAK EDİŞİ</td>
+      <td colspan="${firstFooterIdx}" class="f-title" style="color:red;">TOPLAM BUNDLE HAK EDİŞİ</td>
       ${renderBundleRow(bVal)}
     </tr>
     <tr>
-      <td colspan="${priceStartIndex}" class="f-title">SATILABİLİR MİNİMUM TUTAR</td>
+      <td colspan="${firstFooterIdx}" class="f-title">SATILABİLİR MİNİMUM TUTAR</td>
       ${renderFinalRow(t, bVal)}
     </tr>
     <tr>
-      <td colspan="${priceStartIndex}" class="f-title" style="color:#6a0dad;">SATILABİLİR MİNİMUM TAKSİTLİ TUTAR</td>
+      <td colspan="${firstFooterIdx}" class="f-title" style="color:#6a0dad;">SATILABİLİR MİNİMUM TAKSİTLİ TUTAR</td>
       ${renderTaksitliRow()}
     </tr>
   `;
@@ -334,7 +339,7 @@ function isFooterCol(hT) {
 
 function renderCommonRow(data, cls, fixed) {
   return heads.map((h, i) => {
-    if(i < priceStartIndex) return "";
+    if(i < firstFooterIdx) return "";
     let hT = h.toUpperCase();
     if (!isFooterCol(hT)) return "<td></td>";
     let val = (fixed !== undefined) ? fixed : (data[i] || 0);
@@ -344,7 +349,7 @@ function renderCommonRow(data, cls, fixed) {
 
 function renderBundleRow(bVal) {
   return heads.map((h, i) => {
-    if(i < priceStartIndex) return "";
+    if(i < firstFooterIdx) return "";
     let hT = h.toUpperCase();
     if (!isFooterCol(hT)) return "<td></td>";
     if (hT.includes("HAVALE")) {
@@ -369,7 +374,7 @@ function renderBundleRow(bVal) {
 function renderFinalRow(t, bVal) {
   finalTotals = {};
   return heads.map((h, i) => {
-    if(i < priceStartIndex) return "";
+    if(i < firstFooterIdx) return "";
     let hT = h.toUpperCase();
     if (!isFooterCol(hT)) return "<td></td>";
     let res = (t.base[i] || 0) - t.disc - bVal;
@@ -385,7 +390,7 @@ function renderTaksitliRow() {
   let taksitVal = Math.ceil(havaleVal * 1.08);
 
   return heads.map((h, i) => {
-    if(i < priceStartIndex) return "";
+    if(i < firstFooterIdx) return "";
     let hT = h.toUpperCase();
     if (!isFooterCol(hT)) return "<td></td>";
     if (hT.includes("HAVALE")) {
