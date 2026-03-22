@@ -70,7 +70,7 @@ let partialHavale = "", partialTek = "", finalTotals = {};
 let bipCol = "", phCol = "";
 let linkMap = {}; 
 let currentFocus = -1;
-let priceStartIndex = 13; // Fiyat sütunlarının başlangıç indeksini dinamik tutacağız
+let priceStartIndex = 13; 
 
 const fixString = (str) => !str ? "" : String(str)
   .replace(/İ/g, 'i')
@@ -135,9 +135,9 @@ window.onload = async function() {
     phCol = heads.find(x => x.toUpperCase().includes("PHASE"));
     db = data;
 
-    // YENİ EKLEME: Bekleyen sütununu bulup fiyatların başladığı sütunu dinamik hesapla
-    let bIdx = heads.findIndex(h => h.toUpperCase().includes("BEKLEYEN"));
-    priceStartIndex = (bIdx > -1) ? bIdx + 1 : 14;
+    // Fiyat sütunlarının başlangıç noktasını içinde "TOPTAN" geçen sütundan itibaren alıyoruz.
+    let toptanIdx = heads.findIndex(h => h.toUpperCase().includes("TOPTAN"));
+    priceStartIndex = (toptanIdx > -1) ? toptanIdx : 13;
 
     document.getElementById('statusMsg').innerText =
       `Liste Yüklendi. (${Object.keys(linkMap).length} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
@@ -268,12 +268,10 @@ function refreshTable() {
 
       if (hIdx === 0) {
         cells += `<td style="white-space:normal;">${descContent}</td>`;
-      } else if (hT.includes("BEKLEYEN")) {
-        cells += `<td>${v || '0'}</td>`;
       } else if (hT.includes("ONLINE")) {
         cells += `<td class="t-online-col">${v ? Math.ceil(v).toLocaleString('tr-TR') + ' ₺' : '-'}</td>`;
       } else {
-        // ARTIK 13 YERİNE DİNAMİK priceStartIndex KULLANILIYOR
+        // TOPTAN ile başlayan dinamik priceStartIndex kullanılıyor
         if (colIndex >= priceStartIndex && !isNaN(v) && v !== "") {
           cells += `<td>${Math.ceil(v).toLocaleString('tr-TR') + ' ₺'}</td>`;
         } else {
@@ -299,12 +297,10 @@ function calc() {
   cart.forEach(p => {
     t.disc += (Math.ceil(p[bipCol])||0) + (Math.ceil(p[phCol])||0);
     heads.forEach((h, i) => { 
-      // ARTIK 13 YERİNE DİNAMİK priceStartIndex KULLANILIYOR
       if(i >= priceStartIndex) t.base[i] = (t.base[i]||0) + (Math.ceil(parseFloat(p[h]))||0); 
     });
   });
 
-  // BAŞLIKLARIN UZUNLUĞU DA DİNAMİK OLARAK priceStartIndex'E GÖRE AYARLANDI
   document.getElementById('fR').innerHTML = `
     <tr>
       <td colspan="${priceStartIndex}" class="f-title">TOPLAM LİSTE FİYATI</td>
@@ -330,4 +326,76 @@ function calc() {
 }
 
 function isFooterCol(hT) {
-  if (["HAKEDİŞ","ONLINE","PREMIUM","PHASE","B
+  if (["HAKEDİŞ","ONLINE","PREMIUM","PHASE","BİP","TAKSİT"].some(k => hT.includes(k))) return false;
+  return ["HAVALE","ÇEKİM"].some(k => hT.includes(k));
+}
+
+function renderCommonRow(data, cls, fixed) {
+  return heads.map((h, i) => {
+    if(i < priceStartIndex) return "";
+    let hT = h.toUpperCase();
+    if (!isFooterCol(hT)) return "<td></td>";
+    let val = (fixed !== undefined) ? fixed : (data[i] || 0);
+    return `<td class="${cls}">${val > 0 ? val.toLocaleString('tr-TR') + ' ₺' : '-'}</td>`;
+  }).join('');
+}
+
+function renderBundleRow(bVal) {
+  return heads.map((h, i) => {
+    if(i < priceStartIndex) return "";
+    let hT = h.toUpperCase();
+    if (!isFooterCol(hT)) return "<td></td>";
+    if (hT.includes("HAVALE")) {
+      return `
+        <td>
+          <input
+            type="number"
+            id="manualBundInp"
+            placeholder="..Yazınız.."
+            autocomplete="off"
+            value="${manualBundleVal}"
+            onkeydown="if(event.key==='Enter'){ manualBundleVal=this.value; refreshTable(); }"
+            onblur="manualBundleVal=this.value; refreshTable();"
+          >
+        </td>
+      `;
+    }
+    return `<td style="color:red; white-space:normal; font-size:13px;">${bVal > 0 ? bVal.toLocaleString('tr-TR') + ' ₺' : '-'}</td>`;
+  }).join('');
+}
+
+function renderFinalRow(t, bVal) {
+  finalTotals = {};
+  return heads.map((h, i) => {
+    if(i < priceStartIndex) return "";
+    let hT = h.toUpperCase();
+    if (!isFooterCol(hT)) return "<td></td>";
+    let res = (t.base[i] || 0) - t.disc - bVal;
+    finalTotals[i] = res;
+    return `<td class="t-final">${res > 0 ? res.toLocaleString('tr-TR') + ' ₺' : '-'}</td>`;
+  }).join('');
+}
+
+function renderTaksitliRow() {
+  let havaleIdx = heads.findIndex(h => h.toUpperCase().includes("HAVALE"));
+  let havaleVal = (havaleIdx > -1 && finalTotals[havaleIdx]) ? finalTotals[havaleIdx] : 0;
+  let taksitVal = Math.ceil(havaleVal * 1.08);
+
+  return heads.map((h, i) => {
+    if(i < priceStartIndex) return "";
+    let hT = h.toUpperCase();
+    if (!isFooterCol(hT)) return "<td></td>";
+    if (hT.includes("HAVALE")) {
+      return `<td style="background:#ede7f6; color:#4a148c; font-size:0.8vw; border:2px solid #7b1fa2 !important; font-weight:bold; white-space:nowrap;">${taksitVal > 0 ? taksitVal.toLocaleString('tr-TR') + ' ₺' : '-'}</td>`;
+    }
+    return `<td style="background:#ede7f6;"></td>`;
+  }).join('');
+}
+
+function renderHeader() {
+  document.getElementById('hR').innerHTML =
+    "<tr>" + heads.map(h => `<th>${h.split(' ').join('<br>')}</th>`).join('') + "</tr>";
+}
+</script>
+</body>
+</html>
