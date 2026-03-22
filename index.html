@@ -89,7 +89,7 @@ function fullReset() {
 // Sayfa yüklendiğinde excel dosyasını otomatik çekip okuyacak fonksiyon
 window.onload = async function() {
   try {
-    const response = await fetch('./19 MART FİYAT.xlsx');
+    const response = await fetch('./19 MART 2026 FİYAT.xlsx');
     if (!response.ok) throw new Error("Dosya bulunamadı");
     
     const buffer = await response.arrayBuffer();
