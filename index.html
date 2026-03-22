@@ -49,7 +49,7 @@
 <body>
 <div class="card">
   <div style="margin-bottom:10px; font-size:12px;">
-    <b>FİYAT LİSTESİ:</b> <input type="file" id="fPrice"> <span id="statusMsg">Dosya Bekleniyor...</span>
+    <b>FİYAT LİSTESİ DURUMU:</b> <span id="statusMsg" style="font-weight:bold; color:#007bff;">Liste Yükleniyor, lütfen bekleyin...</span>
   </div>
   <div class="search-container">
     <div class="autocomplete-wrapper">
@@ -86,12 +86,14 @@ function fullReset() {
     closeAllLists();
 }
 
-function readEx(file) {
-  manualBundleVal = ""; partialHavale = ""; partialTek = ""; cart = []; linkMap = {};
-  const r = new FileReader();
-  r.onload = (e) => {
-    const b = new Uint8Array(e.target.result);
-    const w = XLSX.read(b, {type:'array'});
+// Sayfa yüklendiğinde excel dosyasını otomatik çekip okuyacak fonksiyon
+window.onload = async function() {
+  try {
+    const response = await fetch('./19 MART FİYAT.xlsx');
+    if (!response.ok) throw new Error("Dosya bulunamadı");
+    
+    const buffer = await response.arrayBuffer();
+    const w = XLSX.read(buffer, {type:'array'});
     
     w.SheetNames.forEach(sheetName => {
         const rows = XLSX.utils.sheet_to_json(w.Sheets[sheetName], {defval:""});
@@ -138,11 +140,12 @@ function readEx(file) {
       `Liste Yüklendi. (${Object.keys(linkMap).length} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
 
     renderHeader();
-  };
-  r.readAsArrayBuffer(file);
-}
-
-document.getElementById('fPrice').onchange = (e) => readEx(e.target.files[0]);
+  } catch (error) {
+    document.getElementById('statusMsg').innerText = "Fiyat listesi yüklenemedi! (fiyat_listesi.xlsx dosyası bulunamadı)";
+    document.getElementById('statusMsg').style.color = "red";
+    console.error(error);
+  }
+};
 
 const inp = document.getElementById('barcodeInp');
 
