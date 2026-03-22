@@ -47,7 +47,7 @@
 <body>
 <div class="card">
   <div style="margin-bottom:10px; font-size:12px;">
-    <b>FİYAT LİSTESİ DURUMU:</b> <span id="statusMsg" style="font-weight:bold; color:#007bff;">Liste Yükleniyor...</span>
+    <b>FİYAT LİSTESİ YÜKLENDİ:</b> <span id="statusMsg" style="font-weight:bold; color:#007bff;">Liste Yükleniyor...</span>
   </div>
   <div class="search-container">
     <div class="autocomplete-wrapper">
@@ -88,7 +88,7 @@ function fullReset() {
 window.onload = async function() {
   try {
     // BURADAKİ DOSYA ADINI GITHUB'DAKİ EXCEL DOSYANIZIN ADIYLA BİREBİR AYNI YAPIN
-    const response = await fetch('./fiyat_listesi.xlsx'); 
+    const response = await fetch('./22_MART_2026.xlsx'); 
     
     if (!response.ok) throw new Error("Dosya bulunamadı");
     
