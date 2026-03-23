@@ -70,7 +70,6 @@ let linkMap = {};
 let currentFocus = -1;
 let priceStartIndex = 13;
 let firstFooterIdx = 13; 
-let stokColName = "";
 
 const fixString = (str) => !str ? "" : String(str)
   .replace(/İ/g, 'i')
@@ -134,8 +133,6 @@ window.onload = async function() {
     bipCol = heads.find(x => x.toUpperCase().includes("BİP"));
     phCol = heads.find(x => x.toUpperCase().includes("PHASE"));
     
-    stokColName = heads.find(h => h.toUpperCase().includes("TOPLAM STOK")) || heads.find(h => h.toUpperCase() === "STOK") || heads.find(h => h.toUpperCase().includes("STOK") && !h.toUpperCase().includes("KOD"));
-    
     db = data;
 
     let toptanIdx = heads.findIndex(h => h.toUpperCase().includes("TOPTAN"));
@@ -173,13 +170,17 @@ inp.addEventListener("input", function(e) {
     for (let i = 0; i < db.length; i++) {
         let code = db[i]["STOK KODU"] || db[i][heads[0]] || "";
         let desc = db[i][heads[1]] || "";
-        let stokMiktari = stokColName && db[i][stokColName] !== undefined && db[i][stokColName] !== "" ? db[i][stokColName] : "0";
+        
+        let isStudio = desc.toLowerCase().includes("studioline");
+        let targetCol = isStudio ? heads[3] : heads[2];
+        let stokMiktari = targetCol && db[i][targetCol] !== undefined && db[i][targetCol] !== "" ? db[i][targetCol] : "0";
+        let displayColName = targetCol ? targetCol : "Stok";
         
         if ((code && fixString(code).includes(searchStr)) || (desc && fixString(desc).includes(searchStr))) {
             b = document.createElement("DIV");
             b.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                              <span><strong>${code}</strong> - ${desc}</span>
-                             <span style="background: #e3f2fd; color: #007bff; border: 1px solid #007bff; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 13px; white-space: nowrap;">Stok: ${stokMiktari}</span>
+                             <span style="background: #e3f2fd; color: #007bff; border: 1px solid #007bff; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 13px; white-space: nowrap; margin-right: 25px;">${displayColName} Stok: ${stokMiktari}</span>
                            </div>`;
             b.innerHTML += `<input type="hidden" value="${code}">`;
             b.addEventListener("click", function(e) {
