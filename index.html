@@ -88,7 +88,7 @@ function fullReset() {
 
 window.onload = async function() {
   try {
-    const response = await fetch('./22_MART_2026.xlsx');
+    const response = await fetch('./24_MART_2026.xlsx');
     if (!response.ok) throw new Error("Dosya bulunamadı");
     
     const buffer = await response.arrayBuffer();
@@ -142,7 +142,7 @@ window.onload = async function() {
     if (firstFooterIdx === -1) firstFooterIdx = priceStartIndex;
 
     document.getElementById('statusMsg').innerText =
-      `22 MART 2026. (${Object.keys(linkMap).length} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
+      `24 MART 2026. (${Object.keys(linkMap).length} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
 
     renderHeader();
   } catch (error) {
