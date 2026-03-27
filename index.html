@@ -151,8 +151,13 @@ window.onload = async function() {
     firstFooterIdx = heads.findIndex(h => isFooterCol(h.toUpperCase()));
     if (firstFooterIdx === -1) firstFooterIdx = priceStartIndex;
 
-    document.getElementById('statusMsg').innerText =
-  `${dateString} (${db.length} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
+    const linkCount = db.filter(row => {
+    let code = fixString(row[heads[0]]);
+    return code && linkMap[code];
+}).length;
+
+document.getElementById('statusMsg').innerText =
+  `${dateString} (${linkCount} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
 
     renderHeader();
   } catch (error) {
