@@ -139,6 +139,14 @@ window.onload = async function() {
         if(bipIdx > -1) heads.splice(bipIdx, 0, onlineKey);
         else heads.push(onlineKey);
     }
+
+    let acigaIdx = heads.findIndex(h => h.toUpperCase().includes("AÇIĞA") || h.toUpperCase().includes("ACIGA"));
+if(acigaIdx > -1) {
+    let acigaKey = heads.splice(acigaIdx, 1)[0];
+    let toptanIdx2 = heads.findIndex(h => h.toUpperCase().includes("TOPTAN"));
+    if(toptanIdx2 > -1) heads.splice(toptanIdx2, 0, acigaKey); // TOPTAN'ın hemen önüne
+    else heads.push(acigaKey);
+}
     
     bipCol = heads.find(x => x.toUpperCase().includes("BİP"));
     phCol = heads.find(x => x.toUpperCase().includes("PHASE"));
