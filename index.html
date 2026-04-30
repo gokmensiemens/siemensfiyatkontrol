@@ -132,6 +132,7 @@ window.onload = async function() {
       return true;
     });
     
+    // 1. ONLINE sütununu taşı
     let onlineIdx = heads.findIndex(h => h.toUpperCase().includes("ONLINE"));
     if(onlineIdx > -1) {
         let onlineKey = heads.splice(onlineIdx, 1)[0];
@@ -140,14 +141,16 @@ window.onload = async function() {
         else heads.push(onlineKey);
     }
 
+    // 2. AÇIĞA SATIŞ sütununu TOPTAN'ın hemen önüne taşı
     let acigaIdx = heads.findIndex(h => h.toUpperCase().includes("AÇIĞA") || h.toUpperCase().includes("ACIGA"));
-if(acigaIdx > -1) {
-    let acigaKey = heads.splice(acigaIdx, 1)[0];
-    let toptanIdx2 = heads.findIndex(h => h.toUpperCase().includes("TOPTAN"));
-    if(toptanIdx2 > -1) heads.splice(toptanIdx2, 0, acigaKey); // TOPTAN'ın hemen önüne
-    else heads.push(acigaKey);
-}
-    
+    if(acigaIdx > -1) {
+        let acigaKey = heads.splice(acigaIdx, 1)[0];
+        let toptanIdx = heads.findIndex(h => h.toUpperCase().includes("TOPTAN"));
+        if(toptanIdx > -1) heads.splice(toptanIdx, 0, acigaKey);
+        else heads.push(acigaKey);
+    }
+
+    // 3. Tüm taşımalar bittikten SONRA indeksleri hesapla
     bipCol = heads.find(x => x.toUpperCase().includes("BİP"));
     phCol = heads.find(x => x.toUpperCase().includes("PHASE"));
     
@@ -160,12 +163,12 @@ if(acigaIdx > -1) {
     if (firstFooterIdx === -1) firstFooterIdx = priceStartIndex;
 
     const linkCount = db.filter(row => {
-    let code = fixString(row[heads[0]]);
-    return code && linkMap[code];
-}).length;
+      let code = fixString(row[heads[0]]);
+      return code && linkMap[code];
+    }).length;
 
-document.getElementById('statusMsg').innerText =
-  `${dateString} (${linkCount} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
+    document.getElementById('statusMsg').innerText =
+      `${dateString} (${linkCount} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
 
     renderHeader();
   } catch (error) {
