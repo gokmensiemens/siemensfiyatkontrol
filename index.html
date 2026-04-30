@@ -32,11 +32,14 @@
     th:nth-child(n+3):nth-child(-n+15), td:nth-child(n+3):nth-child(-n+15) { width: 3.1vw; } 
         
     th:nth-child(15), td:nth-child(15) { white-space: normal !important; line-height: 1.2; }
+    th:nth-child(18), td:nth-child(18),
+    th:nth-child(19), td:nth-child(19) { width: 5.5vw; min-width: 90px; }
 
     .btn-del { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-bottom: 5px; font-weight: bold; }
     .f-title { text-align: right; padding-right: 15px; background: #f1f3f5; font-weight: bold; font-size: 0.75vw; }
-    .t-res { background: #e3f2fd; white-space: nowrap; }
-    .t-final { background: #d4edda; color: #155724; font-size: 0.8vw; border: 2px solid #28a745 !important; font-weight: bold; white-space: nowrap; }
+    .t-res { background: #e3f2fd; white-space: nowrap; min-width: 90px; }
+    .t-final { background: #d4edda; color: #155724; font-size: 0.8vw; border: 2px solid #28a745 !important; font-weight: bold; white-space: nowrap; min-width: 90px; }
+    .f-title { text-align: right; padding-right: 15px; background: #f1f3f5; font-weight: bold; font-size: 0.75vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .partial-input { width: 100%; box-sizing: border-box; padding: 5px 2px; border: 2px solid #ff9800; border-radius: 4px; font-size: 14px; color: #e65100; text-align: center; font-weight: bold; background: #fffde7; }
     #manualBundInp { width: 100%; box-sizing: border-box; padding: 5px 2px; border: 2px solid #dc3545; border-radius: 4px; text-align: center; font-weight: bold; color: red; }
     .t-partial { background: #fff3e0; color: #bf360c; font-weight: bold; font-size: 15px; }
@@ -98,7 +101,7 @@ window.onload = async function() {
     const fileName = excelFile.name; 
     const dateString = fileName.replace('.xlsx', '').replace(/_/g, ' '); 
 
-    const response = await fetch('./' + fileName + '?v=' + Date.now());
+    const response = await fetch('./' + fileName);
     if (!response.ok) throw new Error("Dosya içeriği okunamadı");
     
     const buffer = await response.arrayBuffer();
