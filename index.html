@@ -358,16 +358,12 @@ function calc() {
       <td colspan="${firstFooterIdx}" class="f-title">SATILABİLİR MİNİMUM TUTAR</td>
       ${renderFinalRow(t, bVal)}
     </tr>
-    <tr>
-      <td colspan="${firstFooterIdx}" class="f-title" style="color:#6a0dad;">SATILABİLİR MİNİMUM TAKSİTLİ TUTAR</td>
-      ${renderTaksitliRow()}
-    </tr>
   `;
 }
 
 function isFooterCol(hT) {
-  if (["HAKEDİŞ","ONLINE","PREMIUM","PHASE","BİP","TAKSİT"].some(k => hT.includes(k))) return false;
-  return ["HAVALE","ÇEKİM"].some(k => hT.includes(k));
+  if (["HAKEDİŞ","ONLINE","PREMIUM","PHASE","BİP"].some(k => hT.includes(k))) return false;
+  return ["HAVALE","ÇEKİM","TAKSİT"].some(k => hT.includes(k));
 }
 
 function renderCommonRow(data, cls, fixed) {
@@ -413,22 +409,6 @@ function renderFinalRow(t, bVal) {
     let res = (t.base[i] || 0) - t.disc - bVal;
     finalTotals[i] = res;
     return `<td class="t-final">${res > 0 ? res.toLocaleString('tr-TR') + ' ₺' : '-'}</td>`;
-  }).join('');
-}
-
-function renderTaksitliRow() {
-  let havaleIdx = heads.findIndex(h => h.toUpperCase().includes("HAVALE"));
-  let havaleVal = (havaleIdx > -1 && finalTotals[havaleIdx]) ? finalTotals[havaleIdx] : 0;
-  let taksitVal = Math.ceil(havaleVal * 1.08);
-
-  return heads.map((h, i) => {
-    if(i < firstFooterIdx) return "";
-    let hT = h.toUpperCase();
-    if (!isFooterCol(hT)) return "<td></td>";
-    if (hT.includes("HAVALE")) {
-      return `<td style="background:#ede7f6; color:#4a148c; font-size:0.8vw; border:2px solid #7b1fa2 !important; font-weight:bold; white-space:nowrap;">${taksitVal > 0 ? taksitVal.toLocaleString('tr-TR') + ' ₺' : '-'}</td>`;
-    }
-    return `<td style="background:#ede7f6;"></td>`;
   }).join('');
 }
 
