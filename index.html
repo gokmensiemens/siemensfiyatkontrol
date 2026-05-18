@@ -32,7 +32,8 @@
     th:nth-child(n+3):nth-child(-n+17), td:nth-child(n+3):nth-child(-n+17) { width: 2.7vw; }
     th:nth-child(n+18), td:nth-child(n+18) { width: 4vw; }
     th:nth-child(15), td:nth-child(15) { white-space: normal !important; line-height: 1.2; }
-    td:nth-last-child(2), td:nth-last-child(3) { white-space: normal !important; line-height: 1.3; font-size: 0.65vw; }
+    td.wrap-col { white-space: normal !important; line-height: 1.3; font-size: 0.65vw; }
+    th.wrap-col { white-space: normal !important; line-height: 1.3; }
 
     .btn-del { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-bottom: 5px; font-weight: bold; }
     .f-title { text-align: right; padding-right: 15px; background: #f1f3f5; font-weight: bold; font-size: 0.75vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -78,6 +79,10 @@ const fixString = (str) => !str ? "" : String(str)
   .toLocaleLowerCase('tr-TR')
   .replace(/\s/g, '')
   .trim();
+
+function isWrapCol(hT) {
+  return ["NOTLAR","KOŞUL","AÇIĞA"].some(k => hT.includes(k));
+}
 
 function fullReset() {
     cart = []; manualBundleVal = ""; partialHavale = ""; partialTek = "";
@@ -301,6 +306,7 @@ function refreshTable() {
       let v = item[h];
       let colIndex = hIdx + 1;
       let hT = h.toUpperCase();
+      let wrapClass = isWrapCol(hT) ? ' class="wrap-col"' : '';
 
       if (hIdx === 0) {
         cells += `<td style="white-space:normal;">${descContent}</td>`;
@@ -308,6 +314,8 @@ function refreshTable() {
         cells += `<td>${v || '0'}</td>`;
       } else if (hT.includes("ONLINE")) {
         cells += `<td class="t-online-col">${v ? Math.ceil(v).toLocaleString('tr-TR') + ' ₺' : '-'}</td>`;
+      } else if (isWrapCol(hT)) {
+        cells += `<td class="wrap-col">${v || '-'}</td>`;
       } else {
         if (colIndex >= priceStartIndex && !isNaN(v) && v !== "") {
           cells += `<td>${Math.ceil(v).toLocaleString('tr-TR') + ' ₺'}</td>`;
@@ -411,7 +419,11 @@ function renderFinalRow(t, bVal) {
 
 function renderHeader() {
   document.getElementById('hR').innerHTML =
-    "<tr>" + heads.map(h => `<th>${h.split(' ').join('<br>')}</th>`).join('') + "</tr>";
+    "<tr>" + heads.map(h => {
+      let hT = h.toUpperCase();
+      let cls = isWrapCol(hT) ? ' class="wrap-col"' : '';
+      return `<th${cls}>${h.split(' ').join('<br>')}</th>`;
+    }).join('') + "</tr>";
 }
 </script>
 </body>
