@@ -175,30 +175,56 @@
       border-left: 4px solid var(--blue);
     }
 
+    /* Kapalı satır: kod + ad + stok + ok + sil */
     .prod-card-header {
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
+      align-items: center;
       padding: 10px 12px;
-      background: #f5f8ff;
-      border-bottom: 1px solid #e8edf5;
       gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: rgba(0,0,0,0.04);
     }
+    .prod-card-header:active { background: #f5f8ff; }
+
+    .prod-info { flex: 1; min-width: 0; }
     .prod-code { font-size: 13px; font-weight: 800; color: var(--blue); }
     .prod-name {
-      font-size: 12px;
-      color: var(--text);
-      margin-top: 2px;
-      line-height: 1.35;
-      word-break: break-word;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .prod-name a { color: var(--blue); font-weight: 600; text-decoration: underline; }
+    .prod-name a { color: var(--blue); text-decoration: underline; }
+
+    .prod-stok {
+      font-size: 12px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .stok-canli { color: #155724; background: #d4edda; }
+    .stok-sifir { color: #721c24; background: #f8d7da; }
+
+    .prod-toggle {
+      font-size: 16px;
+      color: var(--muted);
+      flex-shrink: 0;
+      transition: transform 0.2s;
+      line-height: 1;
+    }
+    .prod-card.open .prod-toggle { transform: rotate(180deg); }
+
     .btn-del {
       background: var(--red);
       color: white;
       border: none;
       border-radius: 6px;
-      padding: 5px 10px;
+      padding: 6px 10px;
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
@@ -206,33 +232,21 @@
       flex-shrink: 0;
     }
 
-    .prod-card-body { padding: 10px 12px; }
-
-    /* stok row */
-    .stok-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 10px;
-      padding-bottom: 8px;
-      border-bottom: 1px dashed var(--border);
+    /* Açılan detay */
+    .prod-card-body {
+      display: none;
+      padding: 10px 12px;
+      border-top: 1px solid #e8edf5;
+      background: #fafbff;
     }
-    .stok-label { font-size: 11px; color: var(--muted); font-weight: 600; }
-    .stok-val {
-      font-size: 13px;
-      font-weight: 800;
-      padding: 2px 8px;
-      border-radius: 5px;
-    }
-    .stok-canli { color: #155724; background: #d4edda; }
-    .stok-sifir { color: #721c24; background: #f8d7da; }
+    .prod-card.open .prod-card-body { display: block; }
 
     /* pulse dot */
     @keyframes pulse-dot {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.4; transform: scale(0.7); }
     }
-    .stok-canli-wrap { position: relative; display: inline-flex; align-items: center; }
+    .stok-canli-wrap { display: inline-flex; align-items: center; }
     .pulse-dot {
       width: 7px; height: 7px;
       border-radius: 50%;
@@ -261,19 +275,6 @@
     .price-row.highlight-row .price-val { color: #0056b3; }
     .price-row.online-row .price-val    { color: #455a64; }
     .price-row.wrap-row .price-val      { font-size: 12px; font-weight: 500; white-space: normal; text-align: left; color: #555; }
-
-    /* notes */
-    .notes-row {
-      margin-top: 8px;
-      background: #fffde7;
-      border: 1px solid #ffe082;
-      border-radius: 7px;
-      padding: 6px 10px;
-      font-size: 11px;
-      line-height: 1.5;
-      color: #5d4037;
-    }
-    .notes-label { font-weight: 700; margin-bottom: 2px; }
 
     /* ── TOTALS SECTION ── */
     #totalsSection { margin: 10px 10px 0; display: none; }
@@ -750,18 +751,16 @@ function refreshCart() {
     let card = document.createElement('div');
     card.className = 'prod-card';
     card.innerHTML = `
-      <div class="prod-card-header">
-        <div style="flex:1; min-width:0;">
+      <div class="prod-card-header" onclick="toggleCard(this)">
+        <div class="prod-info">
           <div class="prod-code">${code}</div>
           <div class="prod-name">${descHTML}</div>
         </div>
-        <button class="btn-del" onclick="removeItem(${i})">SİL</button>
+        <span id="stok-val-${code}" class="prod-stok">${excelStok}</span>
+        <span class="prod-toggle">▾</span>
+        <button class="btn-del" onclick="event.stopPropagation(); removeItem(${i})">SİL</button>
       </div>
       <div class="prod-card-body">
-        <div class="stok-row">
-          <span class="stok-label">STOK:</span>
-          <span id="stok-val-${code}" class="stok-val">${excelStok}</span>
-        </div>
         <div class="price-rows">${priceRows}</div>
       </div>
     `;
@@ -849,6 +848,10 @@ function calcTotals() {
 }
 
 /* ───────────────────────────── REMOVE ─────────────────────────── */
+function toggleCard(header) {
+  header.closest('.prod-card').classList.toggle('open');
+}
+
 function removeItem(i) {
   cart.splice(i, 1);
   if (cart.length === 0) manualBundleVal = "";
@@ -902,11 +905,11 @@ async function canliStokTumunuGuncelle() {
     let canli = window._stokJson[urunKodu];
     if (canli === undefined || canli === null || canli === 0) {
       span.textContent = canli === 0 ? '0' : '0';
-      span.className = 'stok-val stok-sifir';
+      span.className = 'prod-stok stok-sifir';
       _addPulseDot(span, true);
     } else {
       span.textContent = canli;
-      span.className = 'stok-val stok-canli';
+      span.className = 'prod-stok stok-canli';
       _addPulseDot(span, false);
     }
     guncellenen++;
