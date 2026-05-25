@@ -23,6 +23,10 @@
       --radius:  10px;
     }
 
+    html, body {
+      overflow-x: hidden;
+      max-width: 100%;
+    }
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
       background: var(--bg);
@@ -251,34 +255,24 @@
     }
     .pulse-dot.dot-red { background: #dc3545; }
 
-    /* price grid */
-    .price-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
+    /* price rows — label left, value right */
+    .price-rows { display: flex; flex-direction: column; }
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px solid #f0f0f0;
     }
-    .price-cell {
-      background: #f8f9fa;
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      padding: 7px 9px;
-    }
-    .price-cell.highlight-cell {
-      background: #e3f2fd;
-      border-color: #90caf9;
-    }
-    .price-cell.online-cell {
-      background: #eceff1;
-      border-color: #b0bec5;
-    }
-    .price-cell.final-col {
-      background: #d4edda;
-      border: 2px solid var(--green);
-    }
-    .price-label { font-size: 10px; color: var(--muted); font-weight: 600; line-height: 1.2; margin-bottom: 3px; }
-    .price-val { font-size: 14px; font-weight: 800; color: var(--text); }
-    .price-cell.final-col .price-val { color: #155724; font-size: 15px; }
-    .price-cell.online-cell .price-val { color: #455a64; }
+    .price-row:last-child { border-bottom: none; }
+    .price-row.highlight-row { background: #f0f7ff; margin: 0 -12px; padding: 7px 12px; }
+    .price-row.online-row    { background: #f5f7f8; margin: 0 -12px; padding: 7px 12px; }
+    .price-row.wrap-row      { flex-direction: column; align-items: flex-start; gap: 2px; }
+    .price-label { font-size: 11px; color: var(--muted); font-weight: 600; flex-shrink: 0; margin-right: 8px; }
+    .price-val { font-size: 15px; font-weight: 800; color: var(--text); text-align: right; white-space: nowrap; }
+    .price-row.highlight-row .price-val { color: #0056b3; }
+    .price-row.online-row .price-val    { color: #455a64; }
+    .price-row.wrap-row .price-val      { font-size: 12px; font-weight: 500; white-space: normal; text-align: left; color: #555; }
 
     /* notes */
     .notes-row {
@@ -684,38 +678,39 @@ function refreshCart() {
     let stokCol   = isStudio ? heads[3] : heads[2];
     let excelStok = stokCol && item[stokCol] !== undefined && item[stokCol] !== "" ? item[stokCol] : '0';
 
-    // Price cells
-    let priceCells = '';
+    // Price rows
+    let priceRows = '';
     heads.forEach((h, idx) => {
       if (idx < priceStartIndex) return;
       let hT = h.toUpperCase();
       let v  = item[h];
-      let cellClass = 'price-cell';
-      if (isFooterCol(hT)) cellClass += ' highlight-cell';
-      if (hT.includes("ONLINE")) cellClass += ' online-cell';
-
       let label = h.replace(/_/g,' ');
-      let valStr = '';
 
       if (isWrapCol(hT)) {
-        valStr = `<div class="${cellClass}" style="grid-column:1/-1;">
-          <div class="price-label">${label}</div>
-          <div class="price-val" style="font-size:12px;font-weight:600;">${v || '-'}</div>
-        </div>`;
-        priceCells += valStr;
+        // Metin alanları: NOTLAR, KOŞUL, AÇIĞA — sadece değeri varsa göster
+        if (v && String(v).trim() && String(v).trim() !== '-') {
+          priceRows += `<div class="price-row wrap-row">
+            <span class="price-label">${label}</span>
+            <span class="price-val">${v}</span>
+          </div>`;
+        }
         return;
       }
 
+      let rowClass = 'price-row';
+      if (isFooterCol(hT)) rowClass += ' highlight-row';
+      else if (hT.includes("ONLINE")) rowClass += ' online-row';
+
       if (!isNaN(v) && v !== "") {
         let displayed = Math.ceil(v).toLocaleString('tr-TR') + ' ₺';
-        priceCells += `<div class="${cellClass}">
-          <div class="price-label">${label}</div>
-          <div class="price-val">${displayed}</div>
+        priceRows += `<div class="${rowClass}">
+          <span class="price-label">${label}</span>
+          <span class="price-val">${displayed}</span>
         </div>`;
-      } else {
-        priceCells += `<div class="${cellClass}">
-          <div class="price-label">${label}</div>
-          <div class="price-val" style="color:#aaa;">${v || '-'}</div>
+      } else if (v && String(v).trim() && String(v).trim() !== '-') {
+        priceRows += `<div class="${rowClass}">
+          <span class="price-label">${label}</span>
+          <span class="price-val" style="color:#aaa;font-size:13px;">${v}</span>
         </div>`;
       }
     });
@@ -735,7 +730,7 @@ function refreshCart() {
           <span class="stok-label">STOK:</span>
           <span id="stok-val-${code}" class="stok-val">${excelStok}</span>
         </div>
-        <div class="price-grid">${priceCells}</div>
+        <div class="price-rows">${priceRows}</div>
       </div>
     `;
     cartList.appendChild(card);
