@@ -520,7 +520,14 @@ inp.addEventListener('input', function() {
   let container = document.createElement('div');
   container.id = this.id + 'autocomplete-list';
   container.className = 'autocomplete-items';
-  this.parentNode.appendChild(container);
+
+  // body'e fixed ekle — section'ın overflow:hidden'ı listeyi kesiyordu
+  const rect = this.getBoundingClientRect();
+  container.style.position = 'fixed';
+  container.style.top  = (rect.bottom + 2) + 'px';
+  container.style.left = rect.left + 'px';
+  container.style.width = rect.width + 'px';
+  document.body.appendChild(container);
 
   let searchStr = fixString(val);
   let count = 0;
@@ -539,9 +546,8 @@ inp.addEventListener('input', function() {
       el.innerHTML = `<div><span class="ac-code">${code}</span> — ${desc}</div>
                       <span class="ac-stok">Stok: ${stokMiktari}</span>`;
 
-      // Mobilde blur+click yarışını engellemek için touchstart kullan
-      const selectRow = (rowCode) => {
-        let row = db.find(p => (p[heads[0]]) === rowCode);
+      const doSelect = () => {
+        let row = db.find(p => (p[heads[0]]) === code);
         if (row) cart.push({...row});
         refreshCart();
         inp.value = "";
@@ -549,14 +555,10 @@ inp.addEventListener('input', function() {
         setTimeout(() => inp.focus(), 50);
       };
 
-      el.addEventListener('touchstart', function(e) {
-        e.preventDefault(); // blur tetiklenmesini önle
-        selectRow(code);
-      }, { passive: false });
-
-      el.addEventListener('click', function() {
-        selectRow(code);
-      });
+      // mousedown: click'ten önce tetiklenir, blur'u engeller
+      el.addEventListener('mousedown', function(e) { e.preventDefault(); doSelect(); });
+      // touchstart: mobilde blur yarışını atlar
+      el.addEventListener('touchstart', function(e) { e.preventDefault(); doSelect(); }, { passive: false });
 
       container.appendChild(el);
       count++;
