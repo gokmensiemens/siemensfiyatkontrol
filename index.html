@@ -29,9 +29,9 @@
     td { border: 1px solid #dee2e6; padding: 8px 2px; text-align: center; color: #333; font-size: 0.75vw; font-weight: 500; overflow: hidden; white-space: nowrap; }
     th:nth-child(1), td:nth-child(1) { width: 5.5vw; }
     th:nth-child(2), td:nth-child(2) { width: 11.5vw; }
-    th:nth-child(n+3):nth-child(-n+17), td:nth-child(n+3):nth-child(-n+17) { width: 2.7vw; }
-    th:nth-child(n+18), td:nth-child(n+18) { width: 4vw; }
-    th:nth-child(15), td:nth-child(15) { white-space: normal !important; line-height: 1.2; }
+    th:nth-child(n+3):nth-child(-n+15), td:nth-child(n+3):nth-child(-n+15) { width: 2.7vw; }
+    th:nth-child(n+16):nth-child(-n+19), td:nth-child(n+16):nth-child(-n+19) { width: 5.5vw; }
+    th:nth-child(n+20), td:nth-child(n+20) { width: 2.7vw; }
     td.wrap-col { white-space: normal !important; line-height: 1.3; font-size: 0.65vw; }
     th.wrap-col { white-space: normal !important; line-height: 1.3; }
     .btn-del { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-bottom: 5px; font-weight: bold; }
@@ -43,33 +43,23 @@
     .t-partial { background: #fff3e0; color: #bf360c; font-weight: bold; font-size: 15px; }
     .p-link { color: #007bff !important; text-decoration: underline !important; font-weight: bold; cursor: pointer; display: block; white-space: normal; }
     .t-online-col { background: #eceff1; color: #455a64; font-weight: bold; }
-    /* Canlı stok */
     .stok-canli { color: #155724 !important; background: #d4edda; border-radius: 3px; padding: 0 2px; }
     .stok-sifir  { color: #721c24 !important; background: #f8d7da; border-radius: 3px; padding: 0 2px; }
     #btnCanliStok { background: #9C1936; color: white; border: none; border-radius: 6px; padding: 6px 16px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; }
     #btnCanliStok:hover { background: #7a1229; }
     #stokGuncelMsg { font-size: 11px; color: #888; margin-left: 8px; }
-    /* VKN Sorgu */
     #vknBar { display:flex; align-items:center; gap:6px; }
     #vknInp { padding:5px 10px; border:2px solid #6c63ff; border-radius:6px; font-size:12px; width:160px; }
     #btnVkn { background:#6c63ff; color:white; border:none; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:bold; cursor:pointer; white-space:nowrap; }
     #btnVkn:hover { background:#5548e0; }
     #vknSonuc { font-size:11px; color:#333; max-width:320px; background:#f0eeff; border:1px solid #6c63ff; border-radius:6px; padding:5px 10px; display:none; line-height:1.6; }
-
-    /* Canlı stok yeşil nokta */
     @keyframes pulse-dot {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.4; transform: scale(0.7); }
     }
     .stok-canli-wrap { position: relative; display: inline-block; }
-    .stok-canli-wrap .pulse-dot {
-      position: absolute; top: -4px; left: -5px;
-      width: 7px; height: 7px;
-      background: #28a745; border-radius: 50%;
-      animation: pulse-dot 1.2s ease-in-out infinite;
-    }
+    .stok-canli-wrap .pulse-dot { position: absolute; top: -4px; left: -5px; width: 7px; height: 7px; background: #28a745; border-radius: 50%; animation: pulse-dot 1.2s ease-in-out infinite; }
     .stok-canli-wrap .pulse-dot.dot-red { background: #dc3545; }
-
   </style>
 </head>
 <body>
@@ -130,7 +120,6 @@ function fullReset() {
 }
 
 window.onload = async function() {
-  // stok.json'ı önceden yükle
   fetch('./stok.json?_=' + Date.now())
     .then(r => r.ok ? r.json() : {})
     .then(d => { window._stokJson = d; })
@@ -181,7 +170,6 @@ window.onload = async function() {
       return true;
     });
 
-    // 1. ONLINE sütununu taşı
     let onlineIdx = heads.findIndex(h => h.toUpperCase().includes("ONLINE"));
     if(onlineIdx > -1) {
         let onlineKey = heads.splice(onlineIdx, 1)[0];
@@ -190,7 +178,6 @@ window.onload = async function() {
         else heads.push(onlineKey);
     }
 
-    // 2. AÇIĞA SATIŞ sütununu TOPTAN'ın hemen önüne taşı
     let acigaIdx = heads.findIndex(h => h.toUpperCase().includes("AÇIĞA") || h.toUpperCase().includes("ACIGA"));
     if(acigaIdx > -1) {
         let acigaKey = heads.splice(acigaIdx, 1)[0];
@@ -199,7 +186,6 @@ window.onload = async function() {
         else heads.push(acigaKey);
     }
 
-    // 3. İndeksleri hesapla
     bipCol = heads.find(x => x.toUpperCase().includes("BİP"));
     phCol = heads.find(x => x.toUpperCase().includes("PHASE"));
 
@@ -324,8 +310,7 @@ function removeItem(i) {
     refreshTable();
 }
 
-
-  function _addPulseDot(span, isRed) {
+function _addPulseDot(span, isRed) {
     let existing = span.closest('.stok-canli-wrap');
     if (existing) {
       let dot = existing.querySelector('.pulse-dot');
@@ -340,8 +325,7 @@ function removeItem(i) {
     let dot = document.createElement('span');
     dot.className = 'pulse-dot' + (isRed ? ' dot-red' : '');
     wrap.insertBefore(dot, span);
-  }
-
+}
 
 async function vknSorgula() {
   let vkn = document.getElementById('vknInp').value.trim();
@@ -378,6 +362,7 @@ async function vknSorgula() {
     sonuc.style.color = '#dc3545';
   }
 }
+
 async function canliStokTumunuGuncelle() {
   let btn = document.getElementById('btnCanliStok');
   let msg = document.getElementById('stokGuncelMsg');
@@ -399,7 +384,6 @@ async function canliStokTumunuGuncelle() {
     let urunKodu = item[heads[0]] || '';
     let span = document.getElementById('stok-val-' + urunKodu);
     if (!span) return;
-    // Önceki wrap varsa geri al
     let wrap = span.closest('.stok-canli-wrap');
     if (wrap) {
       wrap.parentElement.insertBefore(span, wrap);
@@ -457,14 +441,10 @@ function refreshTable() {
       let hT = h.toUpperCase();
 
       if (hIdx === 0) {
-        // Açıklama
         cells += `<td style="white-space:normal;">${descContent}</td>`;
       } else if (hIdx === 1) {
-        // HOROZ STOK — Excel değeri + canlı stok butonu
         let excelStok = (v !== undefined && v !== "") ? v : '0';
-        cells += `<td>
-          <span id="stok-val-${urunKodu}">${excelStok}</span>
-        </td>`;
+        cells += `<td><span id="stok-val-${urunKodu}">${excelStok}</span></td>`;
       } else if (hT.includes("BEKLEYEN")) {
         cells += `<td>${v || '0'}</td>`;
       } else if (hT.includes("ONLINE")) {
@@ -542,19 +522,12 @@ function renderBundleRow(bVal) {
     let hT = h.toUpperCase();
     if (!isFooterCol(hT)) return "<td></td>";
     if (hT.includes("HAVALE")) {
-      return `
-        <td>
-          <input
-            type="number"
-            id="manualBundInp"
-            placeholder="..Yazınız.."
-            autocomplete="off"
+      return `<td>
+          <input type="number" id="manualBundInp" placeholder="..Yazınız.." autocomplete="off"
             value="${manualBundleVal}"
             onkeydown="if(event.key==='Enter'){ manualBundleVal=this.value; refreshTable(); }"
-            onblur="manualBundleVal=this.value; refreshTable();"
-          >
-        </td>
-      `;
+            onblur="manualBundleVal=this.value; refreshTable();">
+        </td>`;
     }
     return `<td style="color:red; white-space:normal; font-size:13px;">${bVal > 0 ? bVal.toLocaleString('tr-TR') + ' ₺' : '-'}</td>`;
   }).join('');
