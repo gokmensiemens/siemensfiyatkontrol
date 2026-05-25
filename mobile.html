@@ -14,7 +14,6 @@
       --red:     #dc3545;
       --green:   #28a745;
       --orange:  #ff9800;
-      --purple:  #6c63ff;
       --bg:      #f0f2f5;
       --card-bg: #ffffff;
       --border:  #dee2e6;
@@ -89,45 +88,15 @@
     #btnCanliStok:disabled { opacity: .6; }
     #stokGuncelMsg { font-size: 11px; color: var(--muted); margin-top: 6px; text-align: center; }
 
-    /* ── VKN ── */
-    #vknBar { display: flex; gap: 8px; align-items: stretch; }
-    #vknInp {
-      flex: 1;
-      padding: 10px 12px;
-      border: 2px solid var(--purple);
-      border-radius: 8px;
-      font-size: 14px;
-    }
-    #btnVkn {
-      background: var(--purple);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    #vknSonuc {
-      display: none;
-      margin-top: 8px;
-      font-size: 12px;
-      background: #f0eeff;
-      border: 1px solid var(--purple);
-      border-radius: 8px;
-      padding: 8px 12px;
-      line-height: 1.7;
-    }
-
     /* ── SEARCH ── */
     .search-wrap { display: flex; gap: 8px; align-items: stretch; }
     #barcodeInp {
       flex: 1;
-      padding: 14px 12px;
+      width: 100%;
+      padding: 16px 14px;
       border: 3px solid var(--blue);
       border-radius: 8px;
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 600;
       background: #fffde7;
     }
@@ -137,35 +106,43 @@
       color: white;
       border: none;
       border-radius: 8px;
-      padding: 0 16px;
+      padding: 0 18px;
       font-size: 13px;
       font-weight: 700;
       cursor: pointer;
+      flex-shrink: 0;
     }
 
     /* ── AUTOCOMPLETE ── */
-    .autocomplete-wrap { position: relative; flex: 1; }
+    .autocomplete-wrap { position: relative; flex: 1; min-width: 0; }
     .autocomplete-items {
       position: absolute;
-      top: 100%;
+      top: calc(100% + 2px);
       left: 0; right: 0;
-      z-index: 300;
+      z-index: 9999;
       background: white;
       border: 1px solid var(--border);
-      border-radius: 0 0 8px 8px;
-      max-height: 260px;
+      border-radius: 8px;
+      max-height: 50vh;
       overflow-y: auto;
-      box-shadow: 0 4px 12px rgba(0,0,0,.12);
+      -webkit-overflow-scrolling: touch;
+      box-shadow: 0 6px 20px rgba(0,0,0,.18);
     }
     .autocomplete-items div {
-      padding: 11px 12px;
+      padding: 14px 12px;
       border-bottom: 1px solid #f0f0f0;
       font-size: 13px;
       cursor: pointer;
+      /* critical for mobile touch: prevent click from being swallowed */
+      -webkit-tap-highlight-color: rgba(0,123,255,0.08);
+      user-select: none;
     }
-    .autocomplete-items div:active { background: #e9f0ff; }
+    .autocomplete-items div:last-child { border-bottom: none; }
+    .autocomplete-items div:active { background: #e9f0ff !important; }
     .ac-code { font-weight: 700; color: var(--blue); }
     .ac-stok {
+      display: inline-block;
+      margin-top: 3px;
       font-size: 11px;
       background: #e3f2fd;
       color: var(--blue);
@@ -173,7 +150,6 @@
       border-radius: 5px;
       padding: 2px 7px;
       font-weight: 700;
-      white-space: nowrap;
     }
 
     /* ── PRODUCT CARDS ── */
@@ -357,18 +333,6 @@
     #emptyState .empty-icon { font-size: 48px; margin-bottom: 12px; }
     #emptyState p { font-size: 14px; }
 
-    /* ── DESKTOP REDIRECT BANNER ── */
-    .desktop-hint {
-      margin: 10px 10px 0;
-      background: #fff8e1;
-      border: 1px solid #ffe082;
-      border-radius: 8px;
-      padding: 9px 14px;
-      font-size: 11px;
-      color: #7c5500;
-      text-align: center;
-    }
-    .desktop-hint a { color: var(--blue); font-weight: 700; }
   </style>
 </head>
 <body>
@@ -381,25 +345,13 @@
   </div>
 </div>
 
-<!-- DESKTOP HINT -->
-<div class="desktop-hint">
-  Masaüstü için <a href="./index.html">tam tablo görünümüne</a> geçebilirsiniz.
-</div>
-
-<!-- STOK & VKN -->
+<!-- STOK BUTONU -->
 <div class="section" style="margin-top:10px;">
-  <div class="section-header">Araçlar</div>
-  <div class="section-body" style="display:flex; flex-direction:column; gap:10px;">
+  <div class="section-body" style="padding:10px 14px;">
     <button id="btnCanliStok" onclick="canliStokTumunuGuncelle()">
       🔄 Horoz Lojistik'ten Güncel Stok Getir
     </button>
     <div id="stokGuncelMsg"></div>
-    <div id="vknBar">
-      <input id="vknInp" type="text" inputmode="numeric" placeholder="VKN / TCKN girin..." maxlength="11"
-        onkeydown="if(event.key==='Enter') vknSorgula()">
-      <button id="btnVkn" onclick="vknSorgula()">🔍 Sorgula</button>
-    </div>
-    <div id="vknSonuc"></div>
   </div>
 </div>
 
@@ -562,7 +514,7 @@ const inp = document.getElementById('barcodeInp');
 inp.addEventListener('input', function() {
   closeAllLists();
   let val = this.value.trim();
-  if (!val) return;
+  if (!val || !db.length) return;
   currentFocus = -1;
 
   let container = document.createElement('div');
@@ -576,32 +528,43 @@ inp.addEventListener('input', function() {
   for (let i = 0; i < db.length; i++) {
     let code = db[i][heads[0]] || "";
     let desc = db[i][heads[1]] || "";
+    if (!code && !desc) continue;
 
     let isStudio = desc.toLowerCase().includes("studioline");
     let targetCol = isStudio ? heads[3] : heads[2];
     let stokMiktari = targetCol && db[i][targetCol] !== undefined && db[i][targetCol] !== "" ? db[i][targetCol] : "0";
 
     if ((code && fixString(code).includes(searchStr)) || (desc && fixString(desc).includes(searchStr))) {
-      let item = document.createElement('div');
-      item.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-          <span><span class="ac-code">${code}</span> — ${desc}</span>
-          <span class="ac-stok">Stok: ${stokMiktari}</span>
-        </div>`;
+      let el = document.createElement('div');
+      el.innerHTML = `<div><span class="ac-code">${code}</span> — ${desc}</div>
+                      <span class="ac-stok">Stok: ${stokMiktari}</span>`;
 
-      item.addEventListener('click', function() {
-        let row = db.find(p => (p[heads[0]]) === code);
+      // Mobilde blur+click yarışını engellemek için touchstart kullan
+      const selectRow = (rowCode) => {
+        let row = db.find(p => (p[heads[0]]) === rowCode);
         if (row) cart.push({...row});
         refreshCart();
         inp.value = "";
         closeAllLists();
-        inp.focus();
+        setTimeout(() => inp.focus(), 50);
+      };
+
+      el.addEventListener('touchstart', function(e) {
+        e.preventDefault(); // blur tetiklenmesini önle
+        selectRow(code);
+      }, { passive: false });
+
+      el.addEventListener('click', function() {
+        selectRow(code);
       });
-      container.appendChild(item);
+
+      container.appendChild(el);
       count++;
-      if (count >= 80) break;
+      if (count >= 60) break;
     }
   }
+
+  if (count === 0) closeAllLists();
 });
 
 inp.addEventListener('keydown', function(e) {
@@ -637,7 +600,10 @@ function setActive(items) {
 function closeAllLists() {
   document.querySelectorAll('.autocomplete-items').forEach(el => el.remove());
 }
-document.addEventListener('click', e => { if (e.target !== inp) closeAllLists(); });
+// Sadece liste dışına tıklanınca kapat (touch için touchstart değil click yeterli burada)
+document.addEventListener('click', e => {
+  if (e.target !== inp && !e.target.closest('.autocomplete-items')) closeAllLists();
+});
 
 /* ───────────────────────────── RESET ──────────────────────────── */
 function fullReset() {
@@ -885,39 +851,7 @@ async function canliStokTumunuGuncelle() {
   btn.disabled = false;
 }
 
-/* ───────────────────────────── VKN ────────────────────────────── */
-async function vknSorgula() {
-  let vkn   = document.getElementById('vknInp').value.trim();
-  let sonuc = document.getElementById('vknSonuc');
-  if (!vkn || (vkn.length !== 10 && vkn.length !== 11)) {
-    sonuc.style.display = 'block';
-    sonuc.style.color = '#dc3545';
-    sonuc.innerHTML = '⚠️ 10 veya 11 haneli numara girin';
-    return;
-  }
-  sonuc.style.display = 'block';
-  sonuc.style.color = '#333';
-  sonuc.innerHTML = '⏳ Sorgulanıyor...';
-  try {
-    let res = await fetch('https://api.mukellef.info/v2/query.php?taxNumber=' + vkn, {
-      headers: { 'ApiKey': 'd0f09c37-0525-4ebe-91bf-751721c2abda' }
-    });
-    let json = await res.json();
-    if (json.isError || !json.data) {
-      sonuc.innerHTML = '❌ Bulunamadı'; sonuc.style.color = '#dc3545'; return;
-    }
-    let d = json.data;
-    let unvan  = d.title || ((d.firstName||'') + ' ' + (d.lastName||'')).trim();
-    let vd     = d.taxOfficeName || '-';
-    let aktif  = d.isActive ? '✅ AKTİF' : '❌ PASİF';
-    let efat   = d.eInvoiceResponsible  ? '✅' : '❌';
-    let eirsaliye = d.eDespatchResponsible ? '✅' : '❌';
-    sonuc.style.color = '#333';
-    sonuc.innerHTML = `<b>${unvan}</b><br>${vd} &nbsp;|&nbsp; ${aktif}<br>e-Fatura: ${efat} &nbsp;|&nbsp; e-İrsaliye: ${eirsaliye}`;
-  } catch(e) {
-    sonuc.innerHTML = '❌ Bağlantı hatası'; sonuc.style.color = '#dc3545';
-  }
-}
+
 </script>
 </body>
 </html>
