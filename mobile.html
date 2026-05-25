@@ -101,13 +101,25 @@
       background: #fffde7;
     }
     #barcodeInp:focus { outline: none; border-color: var(--blue-dk); }
+    .btn-ekle {
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
     .btn-clear {
       background: var(--red);
       color: white;
       border: none;
       border-radius: 8px;
-      padding: 0 18px;
-      font-size: 13px;
+      padding: 0 14px;
+      font-size: 16px;
       font-weight: 700;
       cursor: pointer;
       flex-shrink: 0;
@@ -363,9 +375,11 @@
       <div class="autocomplete-wrap">
         <input type="text" id="barcodeInp"
           placeholder="Kod veya ürün adı yazın..."
-          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          inputmode="search">
       </div>
-      <button class="btn-clear" onclick="fullReset()">TEMİZLE</button>
+      <button class="btn-ekle" onclick="manuelEkle()">➕ EKLE</button>
+      <button class="btn-clear" onclick="fullReset()">✕</button>
     </div>
   </div>
 </div>
@@ -526,29 +540,51 @@ function closeAllLists() {
 }
 
 /* ───────────────────────────── AUTOCOMPLETE ───────────────────── */
+function tryAddByCode(val) {
+  // Tam eşleşme dene
+  let row = db.find(p => fixString(String(p[heads[0]] || "")) === fixString(val));
+  if (row) { cart.push({...row}); refreshCart(); return true; }
+  // Tek sonuç varsa onu al
+  let matches = db.filter(p =>
+    fixString(String(p[heads[0]] || "")).includes(fixString(val)) ||
+    fixString(String(p[heads[1]] || "")).includes(fixString(val))
+  );
+  if (matches.length === 1) { cart.push({...matches[0]}); refreshCart(); return true; }
+  return false;
+}
+
+function manuelEkle() {
+  const inp = document.getElementById('barcodeInp');
+  if (!inp) return;
+  let val = inp.value.trim();
+  if (!val) return;
+  if (tryAddByCode(val)) {
+    inp.value = "";
+    closeAllLists();
+    inp.focus();
+  } else {
+    // Eşleşme yoksa input'u kırmızı yap
+    inp.style.borderColor = '#dc3545';
+    inp.style.background = '#fff0f0';
+    setTimeout(() => {
+      inp.style.borderColor = '';
+      inp.style.background = '#fffde7';
+    }, 1200);
+  }
+}
+
 function initAutocomplete() {
   const inp = document.getElementById('barcodeInp');
   if (!inp) return;
 
-  inp.addEventListener('input', function() {
+  function showList(val) {
     closeAllLists();
-    let val = this.value.trim();
     if (!val) return;
-    currentFocus = -1;
-
-    const rect = this.getBoundingClientRect();
-    let container = document.createElement('div');
-    container.id = 'ac-list';
-    container.className = 'autocomplete-items';
-    container.style.position = 'fixed';
-    container.style.top   = (rect.bottom + 2) + 'px';
-    container.style.left  = rect.left + 'px';
-    container.style.width = rect.width + 'px';
-    container.style.zIndex = '9999';
-    document.body.appendChild(container);
 
     let searchStr = fixString(val);
-    let count = 0;
+    if (!searchStr) return;
+
+    let results = [];
     let codeKey = heads[0];
     let descKey = heads[1];
 
@@ -556,54 +592,78 @@ function initAutocomplete() {
       let code = String(db[i][codeKey] || "");
       let desc = String(db[i][descKey] || "");
       if (!code && !desc) continue;
+      if (fixString(code).includes(searchStr) || fixString(desc).includes(searchStr)) {
+        results.push({ code, desc, row: db[i] });
+        if (results.length >= 60) break;
+      }
+    }
 
+    if (results.length === 0) return;
+
+    const rect = inp.getBoundingClientRect();
+    let container = document.createElement('div');
+    container.id = 'ac-list';
+    container.className = 'autocomplete-items';
+    container.style.cssText = `position:fixed;top:${rect.bottom+2}px;left:${rect.left}px;width:${rect.width}px;z-index:9999;`;
+    document.body.appendChild(container);
+
+    results.forEach(({ code, desc, row }) => {
       let isStudio = desc.toLowerCase().includes("studioline");
       let stokKey  = isStudio ? heads[3] : heads[2];
-      let stok     = (stokKey && db[i][stokKey] !== undefined && db[i][stokKey] !== "") ? db[i][stokKey] : "0";
+      let stok = (stokKey && row[stokKey] !== undefined && row[stokKey] !== "") ? row[stokKey] : "0";
 
-      if (fixString(code).includes(searchStr) || fixString(desc).includes(searchStr)) {
-        let el = document.createElement('div');
-        el.innerHTML = `<span class="ac-code">${code}</span> — ${desc} <span class="ac-stok">Stok: ${stok}</span>`;
+      let el = document.createElement('div');
+      el.innerHTML = `<span class="ac-code">${code}</span> — ${desc} <span class="ac-stok">Stok: ${stok}</span>`;
 
-        const doSelect = (c) => {
-          let row = db.find(p => String(p[codeKey] || "") === c);
-          if (row) cart.push({...row});
-          refreshCart();
-          inp.value = "";
-          closeAllLists();
-          setTimeout(() => inp.focus(), 50);
-        };
+      const doSelect = () => {
+        cart.push({...row});
+        refreshCart();
+        inp.value = "";
+        closeAllLists();
+        setTimeout(() => inp.focus(), 50);
+      };
 
-        el.addEventListener('mousedown', function(e) { e.preventDefault(); doSelect(code); });
-        el.addEventListener('touchstart', function(e) { e.preventDefault(); doSelect(code); }, { passive: false });
+      el.addEventListener('mousedown', e => { e.preventDefault(); doSelect(); });
+      el.addEventListener('touchstart', e => { e.preventDefault(); doSelect(); }, { passive: false });
+      container.appendChild(el);
+    });
+  }
 
-        container.appendChild(el);
-        if (++count >= 60) break;
-      }
+  // Normal yazma
+  inp.addEventListener('input', function() { showList(this.value.trim()); });
+
+  // Samsung ok tuşu: keyup ile yakala (keyCode 13 ve 'Go'/'Search' action)
+  inp.addEventListener('keyup', function(e) {
+    if (e.keyCode === 13 || e.key === 'Enter' || e.key === 'Go' || e.key === 'Search') {
+      e.preventDefault();
+      let val = this.value.trim();
+      if (!val) return;
+      // Önce listeden ilk sonucu al
+      let list = document.getElementById('ac-list');
+      let first = list ? list.querySelector('div') : null;
+      if (first) { first.dispatchEvent(new MouseEvent('mousedown')); }
+      else { if (tryAddByCode(val)) { this.value = ""; closeAllLists(); } }
     }
-
-    if (count === 0) closeAllLists();
   });
 
+  // keydown - masaüstü ok tuşları
   inp.addEventListener('keydown', function(e) {
     let list = document.getElementById('ac-list');
-    let items = list ? list.getElementsByTagName('div') : null;
-    if (e.keyCode === 40) { currentFocus++; setActive(items); }
-    else if (e.keyCode === 38) { currentFocus--; setActive(items); }
+    let items = list ? list.querySelectorAll('div') : null;
+    if (e.keyCode === 40) { e.preventDefault(); currentFocus++; setActive(items); }
+    else if (e.keyCode === 38) { e.preventDefault(); currentFocus--; setActive(items); }
     else if (e.keyCode === 13) {
       e.preventDefault();
-      if (currentFocus > -1 && items) { items[currentFocus].dispatchEvent(new MouseEvent('mousedown')); }
-      else {
-        let parts = this.value.split(/[\s,]+/);
-        parts.forEach(v => {
-          let row = db.find(p => fixString(String(p[heads[0]] || "")) === fixString(v));
-          if (row) cart.push({...row});
-        });
-        refreshCart();
-        this.value = "";
-        closeAllLists();
+      if (currentFocus > -1 && items && items[currentFocus]) {
+        items[currentFocus].dispatchEvent(new MouseEvent('mousedown'));
       }
     }
+  });
+
+  // Samsung form submit (inputmode="search" ile tetiklenir)
+  inp.closest('form') && inp.closest('form').addEventListener('submit', e => {
+    e.preventDefault();
+    manuelEkle();
   });
 
   document.addEventListener('click', e => {
