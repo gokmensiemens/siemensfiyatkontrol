@@ -503,94 +503,15 @@ window.onload = async function() {
     document.getElementById('statusMsg').textContent =
       `${dateString} · ${linkCount} ürün web sayfası`;
 
+    // DB hazır — autocomplete'i şimdi bağla
+    initAutocomplete();
+
   } catch(err) {
     document.getElementById('statusMsg').textContent = "Yüklenemedi: " + err.message;
   }
 };
 
-/* ───────────────────────────── AUTOCOMPLETE ───────────────────── */
-const inp = document.getElementById('barcodeInp');
-
-inp.addEventListener('input', function() {
-  closeAllLists();
-  let val = this.value.trim();
-  if (!val || !db.length) return;
-  currentFocus = -1;
-
-  let container = document.createElement('div');
-  container.id = this.id + 'autocomplete-list';
-  container.className = 'autocomplete-items';
-
-  // body'e fixed ekle — section'ın overflow:hidden'ı listeyi kesiyordu
-  const rect = this.getBoundingClientRect();
-  container.style.position = 'fixed';
-  container.style.top  = (rect.bottom + 2) + 'px';
-  container.style.left = rect.left + 'px';
-  container.style.width = rect.width + 'px';
-  document.body.appendChild(container);
-
-  let searchStr = fixString(val);
-  let count = 0;
-
-  for (let i = 0; i < db.length; i++) {
-    let code = db[i][heads[0]] || "";
-    let desc = db[i][heads[1]] || "";
-    if (!code && !desc) continue;
-
-    let isStudio = desc.toLowerCase().includes("studioline");
-    let targetCol = isStudio ? heads[3] : heads[2];
-    let stokMiktari = targetCol && db[i][targetCol] !== undefined && db[i][targetCol] !== "" ? db[i][targetCol] : "0";
-
-    if ((code && fixString(code).includes(searchStr)) || (desc && fixString(desc).includes(searchStr))) {
-      let el = document.createElement('div');
-      el.innerHTML = `<div><span class="ac-code">${code}</span> — ${desc}</div>
-                      <span class="ac-stok">Stok: ${stokMiktari}</span>`;
-
-      const doSelect = () => {
-        let row = db.find(p => (p[heads[0]]) === code);
-        if (row) cart.push({...row});
-        refreshCart();
-        inp.value = "";
-        closeAllLists();
-        setTimeout(() => inp.focus(), 50);
-      };
-
-      // mousedown: click'ten önce tetiklenir, blur'u engeller
-      el.addEventListener('mousedown', function(e) { e.preventDefault(); doSelect(); });
-      // touchstart: mobilde blur yarışını atlar
-      el.addEventListener('touchstart', function(e) { e.preventDefault(); doSelect(); }, { passive: false });
-
-      container.appendChild(el);
-      count++;
-      if (count >= 60) break;
-    }
-  }
-
-  if (count === 0) closeAllLists();
-});
-
-inp.addEventListener('keydown', function(e) {
-  let list = document.getElementById(this.id + 'autocomplete-list');
-  let items = list ? list.getElementsByTagName('div') : null;
-  if (e.keyCode === 40) { currentFocus++; setActive(items); }
-  else if (e.keyCode === 38) { currentFocus--; setActive(items); }
-  else if (e.keyCode === 13) {
-    e.preventDefault();
-    if (currentFocus > -1 && items) {
-      items[currentFocus].click();
-    } else {
-      let parts = this.value.split(/[\s,]+/);
-      parts.forEach(v => {
-        let row = db.find(p => fixString(p[heads[0]]) === fixString(v));
-        if (row) cart.push({...row});
-      });
-      refreshCart();
-      this.value = "";
-      closeAllLists();
-    }
-  }
-});
-
+/* ───────────────────────────── HELPERS ────────────────────────── */
 function setActive(items) {
   if (!items) return;
   Array.from(items).forEach(el => el.style.background = '');
@@ -600,20 +521,103 @@ function setActive(items) {
 }
 
 function closeAllLists() {
-  document.querySelectorAll('.autocomplete-items').forEach(el => el.remove());
+  let el = document.getElementById('ac-list');
+  if (el) el.remove();
 }
-// Sadece liste dışına tıklanınca kapat (touch için touchstart değil click yeterli burada)
-document.addEventListener('click', e => {
-  if (e.target !== inp && !e.target.closest('.autocomplete-items')) closeAllLists();
-});
+
+/* ───────────────────────────── AUTOCOMPLETE ───────────────────── */
+function initAutocomplete() {
+  const inp = document.getElementById('barcodeInp');
+  if (!inp) return;
+
+  inp.addEventListener('input', function() {
+    closeAllLists();
+    let val = this.value.trim();
+    if (!val) return;
+    currentFocus = -1;
+
+    const rect = this.getBoundingClientRect();
+    let container = document.createElement('div');
+    container.id = 'ac-list';
+    container.className = 'autocomplete-items';
+    container.style.position = 'fixed';
+    container.style.top   = (rect.bottom + 2) + 'px';
+    container.style.left  = rect.left + 'px';
+    container.style.width = rect.width + 'px';
+    container.style.zIndex = '9999';
+    document.body.appendChild(container);
+
+    let searchStr = fixString(val);
+    let count = 0;
+    let codeKey = heads[0];
+    let descKey = heads[1];
+
+    for (let i = 0; i < db.length; i++) {
+      let code = String(db[i][codeKey] || "");
+      let desc = String(db[i][descKey] || "");
+      if (!code && !desc) continue;
+
+      let isStudio = desc.toLowerCase().includes("studioline");
+      let stokKey  = isStudio ? heads[3] : heads[2];
+      let stok     = (stokKey && db[i][stokKey] !== undefined && db[i][stokKey] !== "") ? db[i][stokKey] : "0";
+
+      if (fixString(code).includes(searchStr) || fixString(desc).includes(searchStr)) {
+        let el = document.createElement('div');
+        el.innerHTML = `<span class="ac-code">${code}</span> — ${desc} <span class="ac-stok">Stok: ${stok}</span>`;
+
+        const doSelect = (c) => {
+          let row = db.find(p => String(p[codeKey] || "") === c);
+          if (row) cart.push({...row});
+          refreshCart();
+          inp.value = "";
+          closeAllLists();
+          setTimeout(() => inp.focus(), 50);
+        };
+
+        el.addEventListener('mousedown', function(e) { e.preventDefault(); doSelect(code); });
+        el.addEventListener('touchstart', function(e) { e.preventDefault(); doSelect(code); }, { passive: false });
+
+        container.appendChild(el);
+        if (++count >= 60) break;
+      }
+    }
+
+    if (count === 0) closeAllLists();
+  });
+
+  inp.addEventListener('keydown', function(e) {
+    let list = document.getElementById('ac-list');
+    let items = list ? list.getElementsByTagName('div') : null;
+    if (e.keyCode === 40) { currentFocus++; setActive(items); }
+    else if (e.keyCode === 38) { currentFocus--; setActive(items); }
+    else if (e.keyCode === 13) {
+      e.preventDefault();
+      if (currentFocus > -1 && items) { items[currentFocus].dispatchEvent(new MouseEvent('mousedown')); }
+      else {
+        let parts = this.value.split(/[\s,]+/);
+        parts.forEach(v => {
+          let row = db.find(p => fixString(String(p[heads[0]] || "")) === fixString(v));
+          if (row) cart.push({...row});
+        });
+        refreshCart();
+        this.value = "";
+        closeAllLists();
+      }
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (e.target !== inp && !e.target.closest('#ac-list')) closeAllLists();
+  });
+}
 
 /* ───────────────────────────── RESET ──────────────────────────── */
 function fullReset() {
   cart = []; manualBundleVal = "";
-  inp.value = "";
+  let inp = document.getElementById('barcodeInp');
+  if (inp) { inp.value = ""; inp.focus(); }
   closeAllLists();
   refreshCart();
-  inp.focus();
 }
 
 /* ───────────────────────────── RENDER CART ────────────────────── */
