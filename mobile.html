@@ -726,7 +726,12 @@ function calcTotals() {
     <div class="totals-col-list">${colRows(i => base[i]||0)}</div>
 
     <div class="totals-section-label">BİP / Phase Out İndirimi</div>
-    <div class="totals-col-list">${colRows(() => disc)}</div>
+    <div class="totals-col-list">
+      <div class="totals-col-row">
+        <span class="tc-label">Toplam BİP/PHASEOUT İndirimi</span>
+        <span class="tc-val">${disc > 0 ? disc.toLocaleString('tr-TR') + ' ₺' : '-'}</span>
+      </div>
+    </div>
 
     <div class="bundle-row">
       <span class="bundle-label">Bundle Hak Edişi</span>
@@ -737,7 +742,7 @@ function calcTotals() {
     </div>
 
     <div class="totals-final-block">
-      <div class="totals-section-label">✅ Satılabilir Minimum</div>
+      <div class="totals-section-label">✅ Satılabilir Minimum Tutarlar</div>
       <div class="totals-col-list">${colRows(i => (base[i]||0) - disc - bVal)}</div>
     </div>
   `;
