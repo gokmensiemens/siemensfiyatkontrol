@@ -186,9 +186,9 @@
     .pc-head:active { background: #f5f8ff; }
 
     .pc-info { flex: 1; min-width: 0; }
-    .pc-code { font-size: 1rem; font-weight: 800; color: var(--blue); }
+    .pc-code { font-size: 1.1rem; font-weight: 800; color: var(--blue); }
     .pc-name {
-      font-size: .85rem;
+      font-size: .95rem;
       color: var(--text);
       margin-top: 2px;
       white-space: nowrap;
@@ -196,7 +196,7 @@
       text-overflow: ellipsis;
     }
     .pc-notes {
-      font-size: .75rem;
+      font-size: .82rem;
       color: #b05a00;
       font-style: italic;
       margin-top: 3px;
@@ -206,9 +206,9 @@
 
     .pc-stok {
       flex-shrink: 0;
-      font-size: .85rem;
+      font-size: .95rem;
       font-weight: 800;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 6px;
       white-space: nowrap;
     }
@@ -253,8 +253,8 @@
     }
     .price-row:last-child { border-bottom: none; }
     .price-row.pr-footer { background: #edf4ff; }
-    .pr-label { font-size: .8rem; color: var(--muted); font-weight: 600; }
-    .pr-val   { font-size: 1.05rem; font-weight: 800; color: var(--text); }
+    .pr-label { font-size: .9rem; color: var(--muted); font-weight: 600; }
+    .pr-val   { font-size: 1.2rem; font-weight: 800; color: var(--text); }
     .price-row.pr-footer .pr-val { color: #0056b3; }
 
     /* ── TOPLAM ── */
@@ -271,56 +271,68 @@
     .totals-head {
       background: var(--dark);
       color: #fff;
-      padding: 12px 16px;
-      font-size: 1rem;
+      padding: 14px 16px;
+      font-size: 1.1rem;
       font-weight: 800;
-      letter-spacing: .3px;
     }
 
-    /* 3 kolonlu toplam grid */
-    .totals-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      border-bottom: 1px solid var(--border);
-    }
-    .totals-grid:last-child { border-bottom: none; }
-    .tg-cell {
-      padding: 12px 10px;
-      text-align: center;
-      border-right: 1px solid var(--border);
-    }
-    .tg-cell:last-child { border-right: none; }
-    .tg-label { font-size: .7rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; }
-    .tg-val   { font-size: 1rem; font-weight: 800; color: var(--text); }
-
+    /* dikey toplam satırları */
     .totals-section-label {
-      padding: 8px 14px 4px;
-      font-size: .7rem;
+      padding: 10px 16px 4px;
+      font-size: .8rem;
       font-weight: 700;
       color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: .5px;
+      letter-spacing: .4px;
       border-top: 1px solid var(--border);
     }
+    .totals-section-label:first-of-type { border-top: none; }
 
-    .totals-grid.tg-final .tg-cell  { background: #d4edda; }
-    .totals-grid.tg-final .tg-val   { color: #155724; font-size: 1.1rem; }
-    .totals-grid.tg-final .tg-label { color: #2d6a4f; }
+    .totals-col-list { padding: 4px 0 8px; }
+    .totals-col-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+    }
+    .tc-label {
+      font-size: .9rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .tc-val {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .totals-final-block {
+      margin: 0;
+      background: #d4edda;
+      border-top: 2px solid #28a745;
+    }
+    .totals-final-block .totals-section-label {
+      border-top: none;
+      color: #2d6a4f;
+      padding-top: 12px;
+    }
+    .totals-final-block .tc-label { color: #2d6a4f; }
+    .totals-final-block .tc-val   { color: #155724; font-size: 1.35rem; }
 
     /* bundle */
     .bundle-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 14px;
+      padding: 10px 16px;
       border-top: 1px solid var(--border);
       gap: 10px;
     }
-    .bundle-label { font-size: .8rem; font-weight: 700; color: #b03a00; flex-shrink: 0; }
+    .bundle-label { font-size: .85rem; font-weight: 700; color: #b03a00; flex-shrink: 0; }
     #manualBundInp {
       flex: 1;
       min-width: 0;
-      padding: 8px 10px;
+      padding: 10px;
       border: 2px solid var(--red);
       border-radius: 8px;
       font-size: 1rem;
@@ -531,7 +543,16 @@ function initSearch() {
         setTimeout(()=>inp.focus(), 50);
       };
       el.addEventListener('mousedown', e => { e.preventDefault(); doAdd(); });
-      el.addEventListener('touchstart', e => { e.preventDefault(); doAdd(); }, {passive:false});
+
+      // Mobil: touchstart/touchend ile scroll ile seçimi ayırt et
+      let touchStartY = 0;
+      el.addEventListener('touchstart', e => {
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+      el.addEventListener('touchend', e => {
+        const moved = Math.abs(e.changedTouches[0].clientY - touchStartY);
+        if (moved < 10) { e.preventDefault(); doAdd(); }
+      }, { passive: false });
       list.appendChild(el);
     });
   });
@@ -684,7 +705,6 @@ function calcTotals() {
   if (!cart.length) { sec.style.display='none'; return; }
   sec.style.display = 'block';
 
-  // Topla
   let base = {}, disc = 0, bVal = parseFloat(manualBundleVal)||0;
   cart.forEach(p => {
     disc += (Math.ceil(parseFloat(p[bipCol]))||0) + (Math.ceil(parseFloat(p[phCol]))||0);
@@ -693,25 +713,21 @@ function calcTotals() {
     });
   });
 
-  const gridRow = (vals, cls='') => `
-    <div class="totals-grid ${cls}">
-      ${footerCols.map(({h,i}) => {
-        const v = vals[i]||0;
-        return `<div class="tg-cell">
-          <div class="tg-label">${h}</div>
-          <div class="tg-val">${v>0 ? v.toLocaleString('tr-TR')+' ₺' : '-'}</div>
-        </div>`;
-      }).join('')}
+  const colRows = (valFn) => footerCols.map(({h,i}) => {
+    const v = valFn(i);
+    return `<div class="totals-col-row">
+      <span class="tc-label">${h}</span>
+      <span class="tc-val">${v > 0 ? v.toLocaleString('tr-TR') + ' ₺' : '-'}</span>
     </div>`;
-
-  const discVals = {}; footerCols.forEach(({i}) => discVals[i] = disc);
-  const finalVals = {}; footerCols.forEach(({i}) => finalVals[i] = (base[i]||0) - disc - bVal);
+  }).join('');
 
   body.innerHTML = `
     <div class="totals-section-label">Liste Toplamı</div>
-    ${gridRow(base)}
+    <div class="totals-col-list">${colRows(i => base[i]||0)}</div>
+
     <div class="totals-section-label">BİP / Phase Out İndirimi</div>
-    ${gridRow(discVals)}
+    <div class="totals-col-list">${colRows(() => disc)}</div>
+
     <div class="bundle-row">
       <span class="bundle-label">Bundle Hak Edişi</span>
       <input type="number" id="manualBundInp" placeholder="Yazınız..."
@@ -719,8 +735,11 @@ function calcTotals() {
         onkeydown="if(event.key==='Enter'){manualBundleVal=this.value;calcTotals();}"
         onblur="manualBundleVal=this.value;calcTotals();">
     </div>
-    <div class="totals-section-label" style="background:#d4edda;color:#155724;">Satılabilir Minimum</div>
-    ${gridRow(finalVals,'tg-final')}
+
+    <div class="totals-final-block">
+      <div class="totals-section-label">✅ Satılabilir Minimum</div>
+      <div class="totals-col-list">${colRows(i => (base[i]||0) - disc - bVal)}</div>
+    </div>
   `;
 }
 
