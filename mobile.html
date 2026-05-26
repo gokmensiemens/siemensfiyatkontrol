@@ -2,435 +2,412 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Siemens Fiyat Kontrol — Mobil</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Siemens Fiyat Kontrol</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --blue:    #007bff;
-      --blue-dk: #0056b3;
-      --red:     #dc3545;
-      --green:   #28a745;
-      --orange:  #ff9800;
-      --bg:      #f0f2f5;
-      --card-bg: #ffffff;
-      --border:  #dee2e6;
-      --text:    #333333;
-      --muted:   #888888;
-      --radius:  10px;
+      --blue:   #007bff;
+      --red:    #dc3545;
+      --green:  #28a745;
+      --dark:   #1a1a2e;
+      --bg:     #f2f4f7;
+      --white:  #ffffff;
+      --border: #e0e4ea;
+      --text:   #222;
+      --muted:  #777;
+      --r:      12px;
     }
 
     html, body {
+      width: 100%;
       overflow-x: hidden;
-      max-width: 100%;
-    }
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
+      font-family: 'Segoe UI', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
-      padding-bottom: 24px;
+      font-size: 16px;
+      -webkit-text-size-adjust: 100%;
     }
 
-    /* ── TOP BAR ── */
+    body { padding-bottom: 32px; }
+
+    /* ── TOPBAR ── */
     .topbar {
       background: var(--blue);
-      color: white;
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 200;
-      box-shadow: 0 2px 8px rgba(0,0,0,.18);
+      color: #fff;
+      padding: 12px 16px 10px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
     }
-    .topbar-title { font-size: 15px; font-weight: 700; letter-spacing: .3px; }
-    .topbar-status { font-size: 10px; opacity: .85; max-width: 55vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    /* ── SECTION CARD ── */
-    .section {
-      background: var(--card-bg);
-      margin: 10px 10px 0;
-      border-radius: var(--radius);
-      box-shadow: 0 1px 6px rgba(0,0,0,.08);
-      overflow: hidden;
-    }
-    .section-header {
-      background: #f8f9fa;
-      border-bottom: 1px solid var(--border);
-      padding: 9px 14px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: .6px;
-    }
-    .section-body { padding: 12px 14px; }
+    .topbar-title { font-size: 1.1rem; font-weight: 800; }
+    .topbar-sub   { font-size: .75rem; opacity: .8; margin-top: 1px; }
 
     /* ── STOK BUTONU ── */
+    .stok-bar {
+      padding: 10px 12px 6px;
+    }
     #btnCanliStok {
       width: 100%;
       background: #9C1936;
-      color: white;
+      color: #fff;
       border: none;
-      border-radius: 8px;
-      padding: 11px 14px;
-      font-size: 13px;
+      border-radius: var(--r);
+      padding: 14px;
+      font-size: 1rem;
       font-weight: 700;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
+      letter-spacing: .3px;
     }
-    #btnCanliStok:disabled { opacity: .6; }
-    #stokGuncelMsg { font-size: 11px; color: var(--muted); margin-top: 6px; text-align: center; }
+    #btnCanliStok:disabled { opacity: .55; }
+    #stokGuncelMsg {
+      text-align: center;
+      font-size: .8rem;
+      color: var(--muted);
+      min-height: 20px;
+      padding: 3px 0 0;
+    }
 
     /* ── SEARCH ── */
-    .search-wrap { display: flex; gap: 8px; align-items: stretch; }
+    .search-bar {
+      padding: 8px 12px 10px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
     #barcodeInp {
       flex: 1;
-      width: 100%;
-      padding: 16px 14px;
-      border: 3px solid var(--blue);
-      border-radius: 8px;
-      font-size: 18px;
+      min-width: 0;
+      padding: 14px 12px;
+      border: 2.5px solid var(--blue);
+      border-radius: var(--r);
+      font-size: 1rem;
       font-weight: 600;
       background: #fffde7;
+      color: var(--text);
+      -webkit-appearance: none;
     }
-    #barcodeInp:focus { outline: none; border-color: var(--blue-dk); }
+    #barcodeInp:focus { outline: none; border-color: #0056b3; }
+
     .btn-ekle {
+      flex-shrink: 0;
       background: var(--green);
-      color: white;
+      color: #fff;
       border: none;
-      border-radius: 8px;
-      padding: 0 16px;
-      font-size: 13px;
+      border-radius: var(--r);
+      padding: 14px 16px;
+      font-size: .95rem;
       font-weight: 700;
       cursor: pointer;
-      flex-shrink: 0;
       white-space: nowrap;
     }
-    .btn-clear {
+    .btn-temizle {
+      flex-shrink: 0;
       background: var(--red);
-      color: white;
+      color: #fff;
       border: none;
-      border-radius: 8px;
-      padding: 0 14px;
-      font-size: 16px;
+      border-radius: var(--r);
+      padding: 14px 12px;
+      font-size: 1rem;
       font-weight: 700;
       cursor: pointer;
-      flex-shrink: 0;
     }
 
     /* ── AUTOCOMPLETE ── */
-    .autocomplete-wrap { position: relative; flex: 1; min-width: 0; }
-    .autocomplete-items {
-      position: absolute;
-      top: calc(100% + 2px);
-      left: 0; right: 0;
+    #ac-list {
+      position: fixed;
       z-index: 9999;
-      background: white;
+      background: var(--white);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 0 0 var(--r) var(--r);
+      box-shadow: 0 8px 24px rgba(0,0,0,.15);
       max-height: 50vh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      box-shadow: 0 6px 20px rgba(0,0,0,.18);
     }
-    .autocomplete-items div {
-      padding: 14px 12px;
+    .ac-item {
+      padding: 13px 14px;
       border-bottom: 1px solid #f0f0f0;
-      font-size: 13px;
       cursor: pointer;
-      /* critical for mobile touch: prevent click from being swallowed */
-      -webkit-tap-highlight-color: rgba(0,123,255,0.08);
-      user-select: none;
+      -webkit-tap-highlight-color: rgba(0,123,255,.08);
     }
-    .autocomplete-items div:last-child { border-bottom: none; }
-    .autocomplete-items div:active { background: #e9f0ff !important; }
-    .ac-code { font-weight: 700; color: var(--blue); }
+    .ac-item:last-child { border-bottom: none; }
+    .ac-item:active { background: #e8f0fe; }
+    .ac-code { font-weight: 800; color: var(--blue); font-size: .95rem; }
+    .ac-desc { font-size: .85rem; color: var(--muted); margin-top: 1px; }
     .ac-stok {
       display: inline-block;
-      margin-top: 3px;
-      font-size: 11px;
+      margin-top: 4px;
+      font-size: .75rem;
+      font-weight: 700;
       background: #e3f2fd;
       color: var(--blue);
-      border: 1px solid var(--blue);
+      border: 1px solid #90caf9;
       border-radius: 5px;
-      padding: 2px 7px;
-      font-weight: 700;
+      padding: 1px 7px;
     }
 
-    /* ── PRODUCT CARDS ── */
-    #cartList { display: flex; flex-direction: column; gap: 10px; padding: 10px; }
+    /* ── BOŞ DURUM ── */
+    #emptyState {
+      text-align: center;
+      padding: 60px 20px 40px;
+      color: var(--muted);
+    }
+    #emptyState .ei { font-size: 3rem; margin-bottom: 10px; }
+    #emptyState p { font-size: 1rem; }
+
+    /* ── ÜRÜN KARTI ── */
+    #cartList {
+      padding: 0 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
 
     .prod-card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      box-shadow: 0 1px 6px rgba(0,0,0,.09);
-      overflow: hidden;
+      background: var(--white);
+      border-radius: var(--r);
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
       border-left: 4px solid var(--blue);
+      overflow: hidden;
     }
 
-    /* Kapalı satır: kod + ad + stok + ok + sil */
-    .prod-card-header {
+    /* Kapalı satır */
+    .pc-head {
       display: flex;
       align-items: center;
-      padding: 10px 12px;
-      gap: 8px;
+      gap: 10px;
+      padding: 12px 12px 12px 14px;
       cursor: pointer;
+      -webkit-tap-highlight-color: rgba(0,0,0,.03);
       user-select: none;
-      -webkit-tap-highlight-color: rgba(0,0,0,0.04);
     }
-    .prod-card-header:active { background: #f5f8ff; }
+    .pc-head:active { background: #f5f8ff; }
 
-    .prod-info { flex: 1; min-width: 0; }
-    .prod-code { font-size: 13px; font-weight: 800; color: var(--blue); }
-    .prod-name {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 1px;
+    .pc-info { flex: 1; min-width: 0; }
+    .pc-code { font-size: 1rem; font-weight: 800; color: var(--blue); }
+    .pc-name {
+      font-size: .85rem;
+      color: var(--text);
+      margin-top: 2px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .prod-name a { color: var(--blue); text-decoration: underline; }
-
-    .prod-stok {
-      font-size: 12px;
-      font-weight: 800;
-      padding: 3px 8px;
-      border-radius: 5px;
-      white-space: nowrap;
-      flex-shrink: 0;
+    .pc-notes {
+      font-size: .75rem;
+      color: #b05a00;
+      font-style: italic;
+      margin-top: 3px;
+      line-height: 1.4;
+      white-space: normal;
     }
-    .stok-canli { color: #155724; background: #d4edda; }
-    .stok-sifir { color: #721c24; background: #f8d7da; }
 
-    .prod-toggle {
-      font-size: 16px;
-      color: var(--muted);
+    .pc-stok {
       flex-shrink: 0;
-      transition: transform 0.2s;
+      font-size: .85rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .s-ok  { background: #d4edda; color: #155724; }
+    .s-no  { background: #f8d7da; color: #721c24; }
+
+    .pc-arrow {
+      flex-shrink: 0;
+      font-size: 1.1rem;
+      color: var(--muted);
+      transition: transform .2s;
       line-height: 1;
     }
-    .prod-card.open .prod-toggle { transform: rotate(180deg); }
+    .prod-card.open .pc-arrow { transform: rotate(180deg); }
 
-    .btn-del {
+    .btn-sil {
+      flex-shrink: 0;
       background: var(--red);
-      color: white;
+      color: #fff;
       border: none;
-      border-radius: 6px;
-      padding: 6px 10px;
-      font-size: 12px;
+      border-radius: 7px;
+      padding: 8px 12px;
+      font-size: .85rem;
       font-weight: 700;
       cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
     }
 
     /* Açılan detay */
-    .prod-card-body {
+    .pc-body {
       display: none;
-      padding: 10px 12px;
-      border-top: 1px solid #e8edf5;
+      border-top: 1px solid var(--border);
       background: #fafbff;
     }
-    .prod-card.open .prod-card-body { display: block; }
+    .prod-card.open .pc-body { display: block; }
 
-    /* pulse dot */
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.7); }
-    }
-    .stok-canli-wrap { display: inline-flex; align-items: center; }
-    .pulse-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: #28a745;
-      animation: pulse-dot 1.2s ease-in-out infinite;
-      margin-right: 4px;
-      flex-shrink: 0;
-    }
-    .pulse-dot.dot-red { background: #dc3545; }
-
-    /* price rows — label left, value right */
-    .price-rows { display: flex; flex-direction: column; }
     .price-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 7px 0;
-      border-bottom: 1px solid #f0f0f0;
+      padding: 11px 14px;
+      border-bottom: 1px solid #f0f2f5;
     }
     .price-row:last-child { border-bottom: none; }
-    .price-row.highlight-row { background: #f0f7ff; margin: 0 -12px; padding: 7px 12px; }
-    .price-row.online-row    { background: #f5f7f8; margin: 0 -12px; padding: 7px 12px; }
-    .price-row.wrap-row      { flex-direction: column; align-items: flex-start; gap: 2px; }
-    .price-label { font-size: 11px; color: var(--muted); font-weight: 600; flex-shrink: 0; margin-right: 8px; }
-    .price-val { font-size: 15px; font-weight: 800; color: var(--text); text-align: right; white-space: nowrap; }
-    .price-row.highlight-row .price-val { color: #0056b3; }
-    .price-row.online-row .price-val    { color: #455a64; }
-    .price-row.wrap-row .price-val      { font-size: 12px; font-weight: 500; white-space: normal; text-align: left; color: #555; }
+    .price-row.pr-footer { background: #edf4ff; }
+    .pr-label { font-size: .8rem; color: var(--muted); font-weight: 600; }
+    .pr-val   { font-size: 1.05rem; font-weight: 800; color: var(--text); }
+    .price-row.pr-footer .pr-val { color: #0056b3; }
 
-    /* ── TOTALS SECTION ── */
-    #totalsSection { margin: 10px 10px 0; display: none; }
-
+    /* ── TOPLAM ── */
+    #totalsSection {
+      margin: 10px 12px 0;
+      display: none;
+    }
     .totals-card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      box-shadow: 0 1px 6px rgba(0,0,0,.09);
+      background: var(--white);
+      border-radius: var(--r);
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
       overflow: hidden;
     }
-    .totals-title {
-      background: var(--blue);
-      color: white;
-      padding: 10px 14px;
-      font-size: 13px;
+    .totals-head {
+      background: var(--dark);
+      color: #fff;
+      padding: 12px 16px;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: .3px;
+    }
+
+    /* 3 kolonlu toplam grid */
+    .totals-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-bottom: 1px solid var(--border);
+    }
+    .totals-grid:last-child { border-bottom: none; }
+    .tg-cell {
+      padding: 12px 10px;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .tg-cell:last-child { border-right: none; }
+    .tg-label { font-size: .7rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; }
+    .tg-val   { font-size: 1rem; font-weight: 800; color: var(--text); }
+
+    .totals-section-label {
+      padding: 8px 14px 4px;
+      font-size: .7rem;
       font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      border-top: 1px solid var(--border);
     }
-    .totals-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
 
-    .totals-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 9px 12px;
-      border-radius: 7px;
-      background: #f8f9fa;
-      border: 1px solid var(--border);
-    }
-    .totals-row.final-row {
-      background: #d4edda;
-      border: 2px solid var(--green);
-    }
-    .totals-row-label { font-size: 11px; font-weight: 700; color: var(--muted); }
-    .totals-row.final-row .totals-row-label { color: #155724; }
-    .totals-cols { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-    .totals-col-item { text-align: right; }
-    .totals-col-name { font-size: 10px; color: var(--muted); }
-    .totals-col-val { font-size: 14px; font-weight: 800; color: var(--text); }
-    .totals-row.final-row .totals-col-val { color: #155724; font-size: 15px; }
+    .totals-grid.tg-final .tg-cell  { background: #d4edda; }
+    .totals-grid.tg-final .tg-val   { color: #155724; font-size: 1.1rem; }
+    .totals-grid.tg-final .tg-label { color: #2d6a4f; }
 
-    /* bundle input */
+    /* bundle */
     .bundle-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 9px 12px;
-      background: #fff3e0;
-      border: 1px solid #ffcc80;
-      border-radius: 7px;
+      padding: 10px 14px;
+      border-top: 1px solid var(--border);
+      gap: 10px;
     }
-    .bundle-row-label { font-size: 11px; font-weight: 700; color: #bf360c; }
+    .bundle-label { font-size: .8rem; font-weight: 700; color: #b03a00; flex-shrink: 0; }
     #manualBundInp {
-      width: 130px;
-      padding: 6px 10px;
-      border: 2px solid #dc3545;
-      border-radius: 6px;
-      font-size: 14px;
+      flex: 1;
+      min-width: 0;
+      padding: 8px 10px;
+      border: 2px solid var(--red);
+      border-radius: 8px;
+      font-size: 1rem;
       font-weight: 700;
-      color: red;
+      color: var(--red);
       text-align: center;
+      -webkit-appearance: none;
     }
 
-    /* ── EMPTY STATE ── */
-    #emptyState {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--muted);
+    /* pulse dot */
+    @keyframes pulse-dot {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:.4; transform:scale(.7); }
     }
-    #emptyState .empty-icon { font-size: 48px; margin-bottom: 12px; }
-    #emptyState p { font-size: 14px; }
+    .stok-wrap { display:inline-flex; align-items:center; gap:3px; }
+    .pulse-dot {
+      width:7px; height:7px; border-radius:50%;
+      background: #28a745;
+      animation: pulse-dot 1.2s ease-in-out infinite;
+      flex-shrink:0;
+    }
+    .pulse-dot.red { background: var(--red); }
 
   </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
 <div class="topbar">
-  <div>
-    <div class="topbar-title">⚡ Siemens Fiyat Kontrol</div>
-    <div class="topbar-status" id="statusMsg">Liste yükleniyor...</div>
-  </div>
+  <div class="topbar-title">⚡ Siemens Fiyat Kontrol</div>
+  <div class="topbar-sub" id="statusMsg">Liste yükleniyor...</div>
 </div>
 
-<!-- STOK BUTONU -->
-<div class="section" style="margin-top:10px;">
-  <div class="section-body" style="padding:10px 14px;">
-    <button id="btnCanliStok" onclick="canliStokTumunuGuncelle()">
-      🔄 Horoz Lojistik'ten Güncel Stok Getir
-    </button>
-    <div id="stokGuncelMsg"></div>
-  </div>
+<div class="stok-bar">
+  <button id="btnCanliStok" onclick="canliStokGuncelle()">🔄 Horoz Lojistik'ten Güncel Stok Getir</button>
+  <div id="stokGuncelMsg"></div>
 </div>
 
-<!-- SEARCH -->
-<div class="section">
-  <div class="section-header">Ürün Ara</div>
-  <div class="section-body">
-    <div class="search-wrap">
-      <div class="autocomplete-wrap">
-        <input type="text" id="barcodeInp"
-          placeholder="Kod veya ürün adı yazın..."
-          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-          inputmode="search">
-      </div>
-      <button class="btn-ekle" onclick="manuelEkle()">➕ EKLE</button>
-      <button class="btn-clear" onclick="fullReset()">✕</button>
-    </div>
-  </div>
+<div class="search-bar">
+  <input id="barcodeInp" type="text" placeholder="Ürün kodu veya adı yazın..."
+    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="search">
+  <button class="btn-ekle"    onclick="manuelEkle()">EKLE</button>
+  <button class="btn-temizle" onclick="fullReset()">✕</button>
 </div>
 
-<!-- CART / PRODUCT CARDS -->
 <div id="cartList">
   <div id="emptyState">
-    <div class="empty-icon">🔍</div>
+    <div class="ei">🔍</div>
     <p>Ürün aramaya başlayın</p>
   </div>
 </div>
 
-<!-- TOTALS -->
 <div id="totalsSection">
   <div class="totals-card">
-    <div class="totals-title">📊 Sepet Özeti</div>
-    <div class="totals-body" id="totalsBody"></div>
+    <div class="totals-head">📊 Sepet Özeti</div>
+    <div id="totalsBody"></div>
   </div>
 </div>
 
 <script>
-/* ───────────────────────────── STATE ───────────────────────────── */
+/* ── STATE ── */
 let db = [], cart = [], heads = [];
-let priceStartIndex = 13, firstFooterIdx = 13;
+let priceStartIndex = 13;
 let bipCol = "", phCol = "";
 let linkMap = {};
 let manualBundleVal = "";
-let currentFocus = -1;
+let footerCols = []; // sadece HAVALE, TEK ÇEKİM, TAKSİT
 
-/* ───────────────────────────── UTILS ───────────────────────────── */
-const fixString = s => !s ? "" : String(s)
+/* ── UTILS ── */
+const fixStr = s => !s ? "" : String(s)
   .replace(/İ/g,'i').replace(/I/g,'ı')
   .toLocaleLowerCase('tr-TR')
   .replace(/\s/g,'').trim();
 
-function isWrapCol(hT) {
-  return ["NOTLAR","KOŞUL","AÇIĞA"].some(k => hT.includes(k));
-}
-function isFooterCol(hT) {
-  if (["HAKEDİŞ","ONLINE","PREMIUM","PHASE","BİP"].some(k => hT.includes(k))) return false;
-  return ["HAVALE","ÇEKİM","TAKSİT"].some(k => hT.includes(k));
-}
+const isFooterCol = hT =>
+  !["HAKEDİŞ","ONLINE","PREMIUM","PHASE","BİP"].some(k => hT.includes(k)) &&
+  ["HAVALE","ÇEKİM","TAKSİT"].some(k => hT.includes(k));
 
-function fmt(v) {
+const isWrapCol = hT => ["NOTLAR","KOŞUL","AÇIĞA"].some(k => hT.includes(k));
+
+const fmtPara = v => {
   let n = Math.ceil(parseFloat(v));
-  return isNaN(n) || n === 0 ? null : n.toLocaleString('tr-TR') + ' ₺';
-}
+  return (!isNaN(n) && n > 0) ? n.toLocaleString('tr-TR') + ' ₺' : null;
+};
 
-/* ───────────────────────────── LOAD ────────────────────────────── */
+/* ── LOAD ── */
 window.onload = async function() {
+  // stok.json arka planda yükle
   fetch('./stok.json?_=' + Date.now())
     .then(r => r.ok ? r.json() : {})
     .then(d => { window._stokJson = d; })
@@ -438,489 +415,364 @@ window.onload = async function() {
 
   try {
     const repoRes = await fetch('https://api.github.com/repos/gokmensiemens/siemensfiyatkontrol/contents/');
-    if (!repoRes.ok) throw new Error("GitHub deposuna ulaşılamadı");
-    const repoFiles = await repoRes.json();
+    if (!repoRes.ok) throw new Error("GitHub'a ulaşılamadı");
+    const files = await repoRes.json();
+    const excelFile = files.find(f => f.name.endsWith('.xlsx'));
+    if (!excelFile) throw new Error("Excel bulunamadı");
 
-    const excelFile = repoFiles.find(f => f.name.endsWith('.xlsx'));
-    if (!excelFile) throw new Error("Excel dosyası bulunamadı!");
+    const dateStr = excelFile.name.replace('.xlsx','').replace(/_/g,' ');
+    const buf = await (await fetch('./' + excelFile.name)).arrayBuffer();
+    const wb  = XLSX.read(buf, { type:'array' });
 
-    const dateString = excelFile.name.replace('.xlsx','').replace(/_/g,' ');
-
-    const res = await fetch('./' + excelFile.name);
-    if (!res.ok) throw new Error("Dosya okunamadı");
-
-    const buffer = await res.arrayBuffer();
-    const w = XLSX.read(buffer, {type:'array'});
-
-    // Build link map from all sheets
-    w.SheetNames.forEach(sheetName => {
-      const rows = XLSX.utils.sheet_to_json(w.Sheets[sheetName], {defval:""});
+    // Link map
+    wb.SheetNames.forEach(sn => {
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], {defval:""});
       if (!rows.length) return;
       const keys = Object.keys(rows[0]);
-      const linkKey = keys.find(k => k.toUpperCase().includes("LİNK") || k.toUpperCase().includes("URL") || k.toUpperCase().includes("LINK"));
-      const codeKey = keys.find(k => k.toUpperCase().includes("NO") || k.toUpperCase().includes("KOD"));
-      if (linkKey && codeKey) {
-        rows.forEach(rw => {
-          let c = fixString(rw[codeKey]);
-          if (c && rw[linkKey]) linkMap[c] = rw[linkKey];
-        });
-      }
+      const lk = keys.find(k => /LİNK|URL|LINK/i.test(k));
+      const ck = keys.find(k => /NO|KOD/i.test(k));
+      if (lk && ck) rows.forEach(r => { let c=fixStr(r[ck]); if(c&&r[lk]) linkMap[c]=r[lk]; });
     });
 
-    // Main sheet
-    const mainSheet = w.Sheets[w.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(mainSheet, {defval:""});
-    if (!data.length) return;
+    // Ana sheet
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:""});
+    if (!rows.length) throw new Error("Veri yok");
 
-    let allKeys = Object.keys(data[0]);
-    heads = allKeys.filter(h => {
-      let hU = h.toUpperCase();
+    // Sütun filtrele
+    heads = Object.keys(rows[0]).filter(h => {
+      const hU = h.toUpperCase();
       if (hU.includes("PRİM HARİÇ") || h.includes("__EMPTY")) return false;
-      if (/^3\s*TAKSİT/i.test(hU)) return false;
-      if (/^9\s*TAKSİT/i.test(hU)) return false;
+      if (/^3\s*TAKSİT/i.test(hU) || /^9\s*TAKSİT/i.test(hU)) return false;
       return true;
     });
 
-    // Reorder: ONLINE before BİP
-    let onlineIdx = heads.findIndex(h => h.toUpperCase().includes("ONLINE"));
-    if (onlineIdx > -1) {
-      let onlineKey = heads.splice(onlineIdx,1)[0];
-      let bipIdx = heads.findIndex(h => h.toUpperCase().includes("BİP"));
-      if (bipIdx > -1) heads.splice(bipIdx, 0, onlineKey);
-      else heads.push(onlineKey);
+    // ONLINE → BİP'in önüne
+    let oi = heads.findIndex(h => h.toUpperCase().includes("ONLINE"));
+    if (oi>-1) {
+      let ok = heads.splice(oi,1)[0];
+      let bi = heads.findIndex(h => h.toUpperCase().includes("BİP"));
+      bi>-1 ? heads.splice(bi,0,ok) : heads.push(ok);
+    }
+    // AÇIĞA → TOPTAN'ın önüne
+    let ai = heads.findIndex(h => /AÇIĞA|ACIGA/i.test(h.toUpperCase()));
+    if (ai>-1) {
+      let ak = heads.splice(ai,1)[0];
+      let ti = heads.findIndex(h => h.toUpperCase().includes("TOPTAN"));
+      ti>-1 ? heads.splice(ti,0,ak) : heads.push(ak);
     }
 
-    // AÇIĞA before TOPTAN
-    let acigaIdx = heads.findIndex(h => h.toUpperCase().includes("AÇIĞA") || h.toUpperCase().includes("ACIGA"));
-    if (acigaIdx > -1) {
-      let acigaKey = heads.splice(acigaIdx,1)[0];
-      let toptanIdx = heads.findIndex(h => h.toUpperCase().includes("TOPTAN"));
-      if (toptanIdx > -1) heads.splice(toptanIdx, 0, acigaKey);
-      else heads.push(acigaKey);
-    }
+    bipCol = heads.find(x => x.toUpperCase().includes("BİP")) || "";
+    phCol  = heads.find(x => x.toUpperCase().includes("PHASE")) || "";
 
-    bipCol = heads.find(x => x.toUpperCase().includes("BİP"));
-    phCol  = heads.find(x => x.toUpperCase().includes("PHASE"));
+    let ti2 = heads.findIndex(h => h.toUpperCase().includes("TOPTAN"));
+    priceStartIndex = ti2 > -1 ? ti2 : 13;
 
-    db = data;
+    // Footer kolonları — sadece HAVALE, TEK ÇEKİM, TAKSİT
+    footerCols = heads
+      .map((h,i) => ({h,i,hT:h.toUpperCase()}))
+      .filter(({i,hT}) => i >= priceStartIndex && isFooterCol(hT));
 
-    let toptanIdx2 = heads.findIndex(h => h.toUpperCase().includes("TOPTAN"));
-    priceStartIndex = (toptanIdx2 > -1) ? toptanIdx2 : 13;
+    db = rows;
 
-    firstFooterIdx = heads.findIndex(h => isFooterCol(h.toUpperCase()));
-    if (firstFooterIdx === -1) firstFooterIdx = priceStartIndex;
+    const lc = db.filter(r => linkMap[fixStr(r[heads[0]])]).length;
+    document.getElementById('statusMsg').textContent = `${dateStr} · ${lc} ürün web sayfası`;
 
-    const linkCount = db.filter(row => {
-      let code = fixString(row[heads[0]]);
-      return code && linkMap[code];
-    }).length;
+    initSearch();
 
-    document.getElementById('statusMsg').textContent =
-      `${dateString} · ${linkCount} ürün web sayfası`;
-
-    // DB hazır — autocomplete'i şimdi bağla
-    initAutocomplete();
-
-  } catch(err) {
-    document.getElementById('statusMsg').textContent = "Yüklenemedi: " + err.message;
+  } catch(e) {
+    document.getElementById('statusMsg').textContent = '⚠️ ' + e.message;
   }
 };
 
-/* ───────────────────────────── HELPERS ────────────────────────── */
-function setActive(items) {
-  if (!items) return;
-  Array.from(items).forEach(el => el.style.background = '');
-  if (currentFocus >= items.length) currentFocus = 0;
-  if (currentFocus < 0) currentFocus = items.length - 1;
-  if (items[currentFocus]) items[currentFocus].style.background = '#e9f0ff';
+/* ── SEARCH / AUTOCOMPLETE ── */
+function initSearch() {
+  const inp = document.getElementById('barcodeInp');
+
+  inp.addEventListener('input', function() {
+    removeAcList();
+    const val = this.value.trim();
+    if (!val) return;
+
+    const q = fixStr(val);
+    const results = [];
+    for (let i=0; i<db.length && results.length<60; i++) {
+      const code = String(db[i][heads[0]]||"");
+      const desc = String(db[i][heads[1]]||"");
+      if (fixStr(code).includes(q) || fixStr(desc).includes(q))
+        results.push({ code, desc, row: db[i] });
+    }
+    if (!results.length) return;
+
+    const rect = inp.getBoundingClientRect();
+    const list = document.createElement('div');
+    list.id = 'ac-list';
+    list.style.top   = rect.bottom + 'px';
+    list.style.left  = rect.left + 'px';
+    list.style.width = rect.width + 'px';
+    document.body.appendChild(list);
+
+    results.forEach(({code, desc, row}) => {
+      const isStudio = desc.toLowerCase().includes("studioline");
+      const stokKey  = isStudio ? heads[3] : heads[2];
+      const stok = (stokKey && row[stokKey]!==undefined && row[stokKey]!=="") ? row[stokKey] : "0";
+
+      const el = document.createElement('div');
+      el.className = 'ac-item';
+      el.innerHTML =
+        `<div class="ac-code">${code}</div>` +
+        `<div class="ac-desc">${desc}</div>` +
+        `<span class="ac-stok">Stok: ${stok}</span>`;
+
+      const doAdd = () => {
+        cart.push({...row});
+        refreshCart();
+        inp.value = "";
+        removeAcList();
+        setTimeout(()=>inp.focus(), 50);
+      };
+      el.addEventListener('mousedown', e => { e.preventDefault(); doAdd(); });
+      el.addEventListener('touchstart', e => { e.preventDefault(); doAdd(); }, {passive:false});
+      list.appendChild(el);
+    });
+  });
+
+  inp.addEventListener('keyup', e => {
+    if (e.key==='Enter'||e.key==='Go'||e.key==='Search'||e.keyCode===13) {
+      e.preventDefault();
+      const list = document.getElementById('ac-list');
+      const first = list ? list.querySelector('.ac-item') : null;
+      if (first) first.dispatchEvent(new MouseEvent('mousedown'));
+      else manuelEkle();
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (e.target !== inp && !e.target.closest('#ac-list')) removeAcList();
+  });
 }
 
-function closeAllLists() {
-  let el = document.getElementById('ac-list');
+function removeAcList() {
+  const el = document.getElementById('ac-list');
   if (el) el.remove();
-}
-
-/* ───────────────────────────── AUTOCOMPLETE ───────────────────── */
-function tryAddByCode(val) {
-  // Tam eşleşme dene
-  let row = db.find(p => fixString(String(p[heads[0]] || "")) === fixString(val));
-  if (row) { cart.push({...row}); refreshCart(); return true; }
-  // Tek sonuç varsa onu al
-  let matches = db.filter(p =>
-    fixString(String(p[heads[0]] || "")).includes(fixString(val)) ||
-    fixString(String(p[heads[1]] || "")).includes(fixString(val))
-  );
-  if (matches.length === 1) { cart.push({...matches[0]}); refreshCart(); return true; }
-  return false;
 }
 
 function manuelEkle() {
   const inp = document.getElementById('barcodeInp');
-  if (!inp) return;
-  let val = inp.value.trim();
+  const val = (inp?.value||"").trim();
   if (!val) return;
-  if (tryAddByCode(val)) {
+  const q = fixStr(val);
+  // Tam eşleşme
+  let row = db.find(p => fixStr(String(p[heads[0]]||"")) === q);
+  // Tek sonuç
+  if (!row) {
+    const m = db.filter(p =>
+      fixStr(String(p[heads[0]]||"")).includes(q) ||
+      fixStr(String(p[heads[1]]||"")).includes(q)
+    );
+    if (m.length === 1) row = m[0];
+  }
+  if (row) {
+    cart.push({...row});
+    refreshCart();
     inp.value = "";
-    closeAllLists();
-    inp.focus();
+    removeAcList();
   } else {
-    // Eşleşme yoksa input'u kırmızı yap
     inp.style.borderColor = '#dc3545';
-    inp.style.background = '#fff0f0';
-    setTimeout(() => {
-      inp.style.borderColor = '';
-      inp.style.background = '#fffde7';
-    }, 1200);
+    inp.style.background  = '#fff0f0';
+    setTimeout(()=>{ inp.style.borderColor=''; inp.style.background='#fffde7'; }, 1200);
   }
 }
 
-function initAutocomplete() {
-  const inp = document.getElementById('barcodeInp');
-  if (!inp) return;
-
-  function showList(val) {
-    closeAllLists();
-    if (!val) return;
-
-    let searchStr = fixString(val);
-    if (!searchStr) return;
-
-    let results = [];
-    let codeKey = heads[0];
-    let descKey = heads[1];
-
-    for (let i = 0; i < db.length; i++) {
-      let code = String(db[i][codeKey] || "");
-      let desc = String(db[i][descKey] || "");
-      if (!code && !desc) continue;
-      if (fixString(code).includes(searchStr) || fixString(desc).includes(searchStr)) {
-        results.push({ code, desc, row: db[i] });
-        if (results.length >= 60) break;
-      }
-    }
-
-    if (results.length === 0) return;
-
-    const rect = inp.getBoundingClientRect();
-    let container = document.createElement('div');
-    container.id = 'ac-list';
-    container.className = 'autocomplete-items';
-    container.style.cssText = `position:fixed;top:${rect.bottom+2}px;left:${rect.left}px;width:${rect.width}px;z-index:9999;`;
-    document.body.appendChild(container);
-
-    results.forEach(({ code, desc, row }) => {
-      let isStudio = desc.toLowerCase().includes("studioline");
-      let stokKey  = isStudio ? heads[3] : heads[2];
-      let stok = (stokKey && row[stokKey] !== undefined && row[stokKey] !== "") ? row[stokKey] : "0";
-
-      let el = document.createElement('div');
-      el.innerHTML = `<span class="ac-code">${code}</span> — ${desc} <span class="ac-stok">Stok: ${stok}</span>`;
-
-      const doSelect = () => {
-        cart.push({...row});
-        refreshCart();
-        inp.value = "";
-        closeAllLists();
-        setTimeout(() => inp.focus(), 50);
-      };
-
-      el.addEventListener('mousedown', e => { e.preventDefault(); doSelect(); });
-      el.addEventListener('touchstart', e => { e.preventDefault(); doSelect(); }, { passive: false });
-      container.appendChild(el);
-    });
-  }
-
-  // Normal yazma
-  inp.addEventListener('input', function() { showList(this.value.trim()); });
-
-  // Samsung ok tuşu: keyup ile yakala (keyCode 13 ve 'Go'/'Search' action)
-  inp.addEventListener('keyup', function(e) {
-    if (e.keyCode === 13 || e.key === 'Enter' || e.key === 'Go' || e.key === 'Search') {
-      e.preventDefault();
-      let val = this.value.trim();
-      if (!val) return;
-      // Önce listeden ilk sonucu al
-      let list = document.getElementById('ac-list');
-      let first = list ? list.querySelector('div') : null;
-      if (first) { first.dispatchEvent(new MouseEvent('mousedown')); }
-      else { if (tryAddByCode(val)) { this.value = ""; closeAllLists(); } }
-    }
-  });
-
-  // keydown - masaüstü ok tuşları
-  inp.addEventListener('keydown', function(e) {
-    let list = document.getElementById('ac-list');
-    let items = list ? list.querySelectorAll('div') : null;
-    if (e.keyCode === 40) { e.preventDefault(); currentFocus++; setActive(items); }
-    else if (e.keyCode === 38) { e.preventDefault(); currentFocus--; setActive(items); }
-    else if (e.keyCode === 13) {
-      e.preventDefault();
-      if (currentFocus > -1 && items && items[currentFocus]) {
-        items[currentFocus].dispatchEvent(new MouseEvent('mousedown'));
-      }
-    }
-  });
-
-  // Samsung form submit (inputmode="search" ile tetiklenir)
-  inp.closest('form') && inp.closest('form').addEventListener('submit', e => {
-    e.preventDefault();
-    manuelEkle();
-  });
-
-  document.addEventListener('click', e => {
-    if (e.target !== inp && !e.target.closest('#ac-list')) closeAllLists();
-  });
-}
-
-/* ───────────────────────────── RESET ──────────────────────────── */
 function fullReset() {
   cart = []; manualBundleVal = "";
-  let inp = document.getElementById('barcodeInp');
-  if (inp) { inp.value = ""; inp.focus(); }
-  closeAllLists();
+  const inp = document.getElementById('barcodeInp');
+  if (inp) { inp.value=""; inp.focus(); }
+  removeAcList();
   refreshCart();
 }
 
-/* ───────────────────────────── RENDER CART ────────────────────── */
+/* ── CART RENDER ── */
 function refreshCart() {
-  const cartList = document.getElementById('cartList');
-  const totals   = document.getElementById('totalsSection');
+  const list = document.getElementById('cartList');
+  const totSec = document.getElementById('totalsSection');
 
-  if (cart.length === 0) {
-    cartList.innerHTML = `
-      <div id="emptyState">
-        <div class="empty-icon">🔍</div>
-        <p>Ürün aramaya başlayın</p>
-      </div>`;
-    totals.style.display = 'none';
+  if (!cart.length) {
+    list.innerHTML = `<div id="emptyState"><div class="ei">🔍</div><p>Ürün aramaya başlayın</p></div>`;
+    totSec.style.display = 'none';
     return;
   }
 
-  cartList.innerHTML = '';
+  list.innerHTML = '';
 
   cart.forEach((item, i) => {
-    let code     = item[heads[0]] || '';
-    let codeFixed = fixString(code);
-    let desc     = item[heads[1]] || '';
-    let descHTML = linkMap[codeFixed]
-      ? `<a href="${linkMap[codeFixed]}" target="_blank">${desc}</a>`
+    const code     = String(item[heads[0]]||'');
+    const codeF    = fixStr(code);
+    const desc     = String(item[heads[1]]||'');
+    const descHTML = linkMap[codeF]
+      ? `<a href="${linkMap[codeF]}" target="_blank" style="color:var(--blue);text-decoration:underline;">${desc}</a>`
       : desc;
 
     // Stok
-    let isStudio  = desc.toLowerCase().includes("studioline");
-    let stokCol   = isStudio ? heads[3] : heads[2];
-    let excelStok = stokCol && item[stokCol] !== undefined && item[stokCol] !== "" ? item[stokCol] : '0';
+    const isStudio = desc.toLowerCase().includes("studioline");
+    const stokCol  = isStudio ? heads[3] : heads[2];
+    const excelStok = (stokCol && item[stokCol]!==undefined && item[stokCol]!=="") ? item[stokCol] : '0';
+    const stokCls  = (parseInt(excelStok)||0) > 0 ? 's-ok' : 's-no';
 
-    // Price rows
-    let priceRows = '';
-    heads.forEach((h, idx) => {
+    // Notlar (BİP koşulu, ürün notu, AÇIĞA satış notu)
+    let notParts = [];
+    heads.forEach(h => {
+      const hT = h.toUpperCase();
+      if (!isWrapCol(hT)) return;
+      const v = String(item[h]||'').trim();
+      if (v && v !== '-') notParts.push(v);
+    });
+    const notHTML = notParts.length
+      ? `<div class="pc-notes">${notParts.join(' · ')}</div>`
+      : '';
+
+    // Fiyat satırları (accordion içi)
+    let priceHTML = '';
+    heads.forEach((h,idx) => {
       if (idx < priceStartIndex) return;
-      let hT = h.toUpperCase();
-      let v  = item[h];
-      let label = h.replace(/_/g,' ');
-
-      if (isWrapCol(hT)) {
-        // Metin alanları: NOTLAR, KOŞUL, AÇIĞA — sadece değeri varsa göster
-        if (v && String(v).trim() && String(v).trim() !== '-') {
-          priceRows += `<div class="price-row wrap-row">
-            <span class="price-label">${label}</span>
-            <span class="price-val">${v}</span>
-          </div>`;
-        }
-        return;
-      }
-
-      let rowClass = 'price-row';
-      if (isFooterCol(hT)) rowClass += ' highlight-row';
-      else if (hT.includes("ONLINE")) rowClass += ' online-row';
-
-      if (!isNaN(v) && v !== "") {
-        let displayed = Math.ceil(v).toLocaleString('tr-TR') + ' ₺';
-        priceRows += `<div class="${rowClass}">
-          <span class="price-label">${label}</span>
-          <span class="price-val">${displayed}</span>
-        </div>`;
-      } else if (v && String(v).trim() && String(v).trim() !== '-') {
-        priceRows += `<div class="${rowClass}">
-          <span class="price-label">${label}</span>
-          <span class="price-val" style="color:#aaa;font-size:13px;">${v}</span>
-        </div>`;
-      }
+      const hT = h.toUpperCase();
+      if (isWrapCol(hT)) return; // notlar yukarıda gösterildi
+      const v   = item[h];
+      const val = fmtPara(v);
+      if (!val) return;
+      const cls = isFooterCol(hT) ? 'price-row pr-footer' : 'price-row';
+      priceHTML += `<div class="${cls}">
+        <span class="pr-label">${h}</span>
+        <span class="pr-val">${val}</span>
+      </div>`;
     });
 
-    let card = document.createElement('div');
+    const card = document.createElement('div');
     card.className = 'prod-card';
     card.innerHTML = `
-      <div class="prod-card-header" onclick="toggleCard(this)">
-        <div class="prod-info">
-          <div class="prod-code">${code}</div>
-          <div class="prod-name">${descHTML}</div>
+      <div class="pc-head" onclick="toggleCard(this)">
+        <div class="pc-info">
+          <div class="pc-code">${code}</div>
+          <div class="pc-name">${descHTML}</div>
+          ${notHTML}
         </div>
-        <span id="stok-val-${code}" class="prod-stok">${excelStok}</span>
-        <span class="prod-toggle">▾</span>
-        <button class="btn-del" onclick="event.stopPropagation(); removeItem(${i})">SİL</button>
+        <span id="stok-val-${code}" class="pc-stok ${stokCls}">${excelStok}</span>
+        <span class="pc-arrow">▾</span>
+        <button class="btn-sil" onclick="event.stopPropagation();removeItem(${i})">SİL</button>
       </div>
-      <div class="prod-card-body">
-        <div class="price-rows">${priceRows}</div>
-      </div>
+      <div class="pc-body">${priceHTML}</div>
     `;
-    cartList.appendChild(card);
+    list.appendChild(card);
   });
 
   calcTotals();
 }
 
-/* ───────────────────────────── TOTALS ─────────────────────────── */
-function calcTotals() {
-  const totalsSection = document.getElementById('totalsSection');
-  const totalsBody    = document.getElementById('totalsBody');
-
-  if (cart.length === 0) { totalsSection.style.display = 'none'; return; }
-  totalsSection.style.display = 'block';
-
-  // Gather footer columns
-  let footerCols = heads
-    .map((h, i) => ({ h, i, hT: h.toUpperCase() }))
-    .filter(({ i, hT }) => i >= priceStartIndex && isFooterCol(hT));
-
-  // Totals
-  let baseTotal  = {};
-  let discTotal  = 0;
-  let bVal       = parseFloat(manualBundleVal) || 0;
-
-  cart.forEach(p => {
-    discTotal += (Math.ceil(p[bipCol]) || 0) + (Math.ceil(p[phCol]) || 0);
-    footerCols.forEach(({ h, i }) => {
-      baseTotal[i] = (baseTotal[i] || 0) + (Math.ceil(parseFloat(p[h])) || 0);
-    });
-  });
-
-  function colsHTML(valFn, valClass) {
-    return footerCols.map(({ h, i }) => {
-      let v = valFn(i);
-      return `<div class="totals-col-item">
-        <div class="totals-col-name">${h}</div>
-        <div class="totals-col-val ${valClass || ''}">${v > 0 ? v.toLocaleString('tr-TR') + ' ₺' : '-'}</div>
-      </div>`;
-    }).join('');
-  }
-
-  let html = '';
-
-  // Liste toplamı
-  html += `<div class="totals-row">
-    <div class="totals-row-label">TOPLAM LİSTE FİYATI</div>
-    <div class="totals-cols">${colsHTML(i => baseTotal[i] || 0)}</div>
-  </div>`;
-
-  // Bip/Phase indirim
-  html += `<div class="totals-row">
-    <div class="totals-row-label">BİP İNDİRİMİ / PHASE OUT</div>
-    <div class="totals-cols">${footerCols.map(({ h }) =>
-      `<div class="totals-col-item">
-        <div class="totals-col-name">${h}</div>
-        <div class="totals-col-val">${discTotal > 0 ? discTotal.toLocaleString('tr-TR') + ' ₺' : '-'}</div>
-      </div>`).join('')}</div>
-  </div>`;
-
-  // Bundle
-  html += `<div class="bundle-row">
-    <div class="bundle-row-label">TOPLAM BUNDLE HAK EDİŞİ</div>
-    <input type="number" id="manualBundInp" placeholder="Yazınız..."
-      value="${manualBundleVal}"
-      onkeydown="if(event.key==='Enter'){manualBundleVal=this.value;calcTotals();}"
-      onblur="manualBundleVal=this.value;calcTotals();">
-  </div>`;
-
-  // Final
-  html += `<div class="totals-row final-row">
-    <div class="totals-row-label">SATILABİLİR MİNİMUM TUTAR</div>
-    <div class="totals-cols">${footerCols.map(({ h, i }) => {
-      let res = (baseTotal[i] || 0) - discTotal - bVal;
-      return `<div class="totals-col-item">
-        <div class="totals-col-name">${h}</div>
-        <div class="totals-col-val">${res > 0 ? res.toLocaleString('tr-TR') + ' ₺' : '-'}</div>
-      </div>`;
-    }).join('')}</div>
-  </div>`;
-
-  totalsBody.innerHTML = html;
-}
-
-/* ───────────────────────────── REMOVE ─────────────────────────── */
-function toggleCard(header) {
-  header.closest('.prod-card').classList.toggle('open');
+function toggleCard(head) {
+  head.closest('.prod-card').classList.toggle('open');
 }
 
 function removeItem(i) {
-  cart.splice(i, 1);
-  if (cart.length === 0) manualBundleVal = "";
+  cart.splice(i,1);
+  if (!cart.length) manualBundleVal = "";
   refreshCart();
 }
 
-/* ───────────────────────────── STOK ───────────────────────────── */
-function _addPulseDot(span, isRed) {
-  let existing = span.closest('.stok-canli-wrap');
-  if (existing) {
-    let dot = existing.querySelector('.pulse-dot');
-    if (dot) dot.className = 'pulse-dot' + (isRed ? ' dot-red' : '');
+/* ── TOTALS ── */
+function calcTotals() {
+  const sec  = document.getElementById('totalsSection');
+  const body = document.getElementById('totalsBody');
+  if (!cart.length) { sec.style.display='none'; return; }
+  sec.style.display = 'block';
+
+  // Topla
+  let base = {}, disc = 0, bVal = parseFloat(manualBundleVal)||0;
+  cart.forEach(p => {
+    disc += (Math.ceil(parseFloat(p[bipCol]))||0) + (Math.ceil(parseFloat(p[phCol]))||0);
+    footerCols.forEach(({h,i}) => {
+      base[i] = (base[i]||0) + (Math.ceil(parseFloat(p[h]))||0);
+    });
+  });
+
+  const gridRow = (vals, cls='') => `
+    <div class="totals-grid ${cls}">
+      ${footerCols.map(({h,i}) => {
+        const v = vals[i]||0;
+        return `<div class="tg-cell">
+          <div class="tg-label">${h}</div>
+          <div class="tg-val">${v>0 ? v.toLocaleString('tr-TR')+' ₺' : '-'}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  const discVals = {}; footerCols.forEach(({i}) => discVals[i] = disc);
+  const finalVals = {}; footerCols.forEach(({i}) => finalVals[i] = (base[i]||0) - disc - bVal);
+
+  body.innerHTML = `
+    <div class="totals-section-label">Liste Toplamı</div>
+    ${gridRow(base)}
+    <div class="totals-section-label">BİP / Phase Out İndirimi</div>
+    ${gridRow(discVals)}
+    <div class="bundle-row">
+      <span class="bundle-label">Bundle Hak Edişi</span>
+      <input type="number" id="manualBundInp" placeholder="Yazınız..."
+        value="${manualBundleVal}"
+        onkeydown="if(event.key==='Enter'){manualBundleVal=this.value;calcTotals();}"
+        onblur="manualBundleVal=this.value;calcTotals();">
+    </div>
+    <div class="totals-section-label" style="background:#d4edda;color:#155724;">Satılabilir Minimum</div>
+    ${gridRow(finalVals,'tg-final')}
+  `;
+}
+
+/* ── CANLI STOK ── */
+function _pulseDot(span, isRed) {
+  let wrap = span.closest('.stok-wrap');
+  if (wrap) {
+    const dot = wrap.querySelector('.pulse-dot');
+    if (dot) dot.className = 'pulse-dot' + (isRed?' red':'');
     return;
   }
-  let parent = span.parentElement;
-  let wrap = document.createElement('span');
-  wrap.className = 'stok-canli-wrap';
+  const parent = span.parentElement;
+  wrap = document.createElement('span');
+  wrap.className = 'stok-wrap';
   parent.insertBefore(wrap, span);
   wrap.appendChild(span);
-  let dot = document.createElement('span');
-  dot.className = 'pulse-dot' + (isRed ? ' dot-red' : '');
+  const dot = document.createElement('span');
+  dot.className = 'pulse-dot' + (isRed?' red':'');
   wrap.insertBefore(dot, span);
 }
 
-async function canliStokTumunuGuncelle() {
-  let btn = document.getElementById('btnCanliStok');
-  let msg = document.getElementById('stokGuncelMsg');
+async function canliStokGuncelle() {
+  const btn = document.getElementById('btnCanliStok');
+  const msg = document.getElementById('stokGuncelMsg');
   btn.disabled = true;
   msg.textContent = '⏳ Yükleniyor...';
-
   try {
-    let res = await fetch('./stok.json?_=' + Date.now());
-    if (!res.ok) throw new Error('stok.json bulunamadı');
+    const res = await fetch('./stok.json?_=' + Date.now());
+    if (!res.ok) throw new Error();
     window._stokJson = await res.json();
-  } catch(e) {
+  } catch {
     msg.textContent = '❌ Stok verisi alınamadı';
     btn.disabled = false;
     return;
   }
-
-  let guncellenen = 0;
+  let n = 0;
   cart.forEach(item => {
-    let urunKodu = item[heads[0]] || '';
-    let span = document.getElementById('stok-val-' + urunKodu);
+    const code = String(item[heads[0]]||'');
+    const span = document.getElementById('stok-val-' + code);
     if (!span) return;
-
-    // unwrap existing pulse wrap
-    let wrap = span.closest('.stok-canli-wrap');
+    const wrap = span.closest('.stok-wrap');
     if (wrap) { wrap.parentElement.insertBefore(span, wrap); wrap.remove(); }
-
-    let canli = window._stokJson[urunKodu];
-    if (canli === undefined || canli === null || canli === 0) {
-      span.textContent = canli === 0 ? '0' : '0';
-      span.className = 'prod-stok stok-sifir';
-      _addPulseDot(span, true);
-    } else {
-      span.textContent = canli;
-      span.className = 'prod-stok stok-canli';
-      _addPulseDot(span, false);
-    }
-    guncellenen++;
+    const canli = window._stokJson[code];
+    const v = (canli===undefined||canli===null) ? 0 : canli;
+    span.textContent = v;
+    span.className = 'pc-stok ' + (v>0 ? 's-ok' : 's-no');
+    _pulseDot(span, v===0);
+    n++;
   });
-
-  let simdi = new Date().toLocaleTimeString('tr-TR');
-  msg.textContent = `✅ ${guncellenen} ürün güncellendi (${simdi})`;
+  msg.textContent = `✅ ${n} ürün güncellendi (${new Date().toLocaleTimeString('tr-TR')})`;
   btn.disabled = false;
 }
-
-
 </script>
 </body>
 </html>
