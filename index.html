@@ -29,9 +29,9 @@
     td { border: 1px solid #dee2e6; padding: 8px 2px; text-align: center; color: #333; font-size: 0.75vw; font-weight: 500; overflow: hidden; white-space: nowrap; }
     th:nth-child(1), td:nth-child(1) { width: 5.5vw; }
     th:nth-child(2), td:nth-child(2) { width: 11.5vw; }
-    th:nth-child(n+3):nth-child(-n+17), td:nth-child(n+3):nth-child(-n+16) { width: 2.7vw; }
-th:nth-child(n+17):nth-child(-n+21), td:nth-child(n+17):nth-child(-n+21) { width: 3.7vw; }
-th:nth-child(n+22), td:nth-child(n+22) { width: 3.5vw; }
+    th:nth-child(n+3):nth-child(-n+17), td:nth-child(n+3):nth-child(-n+17) { width: 2.7vw; }
+    th:nth-child(n+18):nth-child(-n+21), td:nth-child(n+18):nth-child(-n+21) { width: 3.7vw; }
+    th:nth-child(n+22), td:nth-child(n+22) { width: 3.0vw; }
     td.wrap-col { white-space: normal !important; line-height: 1.3; font-size: 0.65vw; }
     th.wrap-col { white-space: normal !important; line-height: 1.3; }
     .btn-del { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-bottom: 5px; font-weight: bold; }
@@ -503,7 +503,7 @@ function calc() {
 
 function isFooterCol(hT) {
   if (["HAKEDİŞ","ONLINE","PREMIUM","PHASE","BİP"].some(k => hT.includes(k))) return false;
-  return ["HAVALE","ÇEKİM","TAKSİT"].some(k => hT.includes(k));
+  return ["HAVALE","ÇEKİM","TAKSİT","WEB"].some(k => hT.includes(k));
 }
 
 function renderCommonRow(data, cls, fixed) {
