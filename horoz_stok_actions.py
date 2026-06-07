@@ -25,6 +25,17 @@ class VSParser(HTMLParser):
         if name and tag in ("input",):
             self.fields[name] = value
 
+def get_with_retry(session, url, timeout=45, retries=4, wait=15):
+    for attempt in range(retries):
+        try:
+            r = session.get(url, timeout=timeout)
+            return r
+        except Exception as e:
+            log(f"GET deneme {attempt+1}/{retries} başarısız: {e}")
+            if attempt < retries - 1:
+                time.sleep(wait)
+    return None
+
 def get_all_stok():
     stok = {}
     session = requests.Session()
@@ -35,7 +46,11 @@ def get_all_stok():
     })
 
     # 1. Login
-    r = session.get("https://app3.horoz.com.tr/wsKurumsal/frmGiris.aspx", timeout=30)
+    r = get_with_retry(session, "https://app3.horoz.com.tr/wsKurumsal/frmGiris.aspx")
+    if r is None:
+        log("Login sayfasına ulaşılamadı, çıkılıyor.")
+        return stok
+
     parser = VSParser()
     parser.feed(r.text)
 
@@ -45,7 +60,7 @@ def get_all_stok():
     login_data["bntLogin"] = "Giriş yap"
 
     r2 = session.post("https://app3.horoz.com.tr/wsKurumsal/frmGiris.aspx",
-                      data=login_data, timeout=30, allow_redirects=True)
+                      data=login_data, timeout=45, allow_redirects=True)
     log(f"Login URL: {r2.url}")
 
     if "frmGiris" in r2.url:
@@ -54,7 +69,10 @@ def get_all_stok():
     log("Giriş başarılı!")
 
     # 2. Stok sorgulama sayfasını aç — viewstate al
-    r3 = session.get("https://app4.horoz.com.tr/wsEvTeslim/_sorgu/EvTeslim/Depo/frmStokSorgulama.aspx", timeout=30)
+    r3 = get_with_retry(session, "https://app4.horoz.com.tr/wsEvTeslim/_sorgu/EvTeslim/Depo/frmStokSorgulama.aspx")
+    if r3 is None:
+        log("Stok sayfasına ulaşılamadı, çıkılıyor.")
+        return stok
     log(f"Stok sayfa status: {r3.status_code}")
 
     parser2 = VSParser()
@@ -64,7 +82,7 @@ def get_all_stok():
     vsg = parser2.fields.get("__VIEWSTATEGENERATOR", "")
     log(f"ViewState uzunluğu: {len(vs)}")
 
-    # 3. Listele POST — payload'dan aldığımız değerler
+    # 3. Listele POST
     stok_data = {
         "__EVENTTARGET": "",
         "__EVENTARGUMENT": "",
@@ -115,7 +133,6 @@ def get_all_stok():
         "ASPxRoundPanel1$lnkYardim$pnlYardimLinkState": '{"windowsState":"0:0:-1:0:0:0:-10000:-10000:1:0:0:0"}',
         "ASPxRoundPanel1$lnkYardim$pnlEkranState": '{"windowsState":"0:0:-1:0:0:0:-10000:-10000:1:0:0:0"}',
         "DXScript": "1_11,1_12,1_255,1_23,1_64,1_14,1_15,1_183,1_189,1_17,1_41,1_184,1_21,1_22,1_190,1_186,1_193,1_192,1_194,1_8,1_182,1_49,1_42",
-
         "DXCss": "1_74,1_68,1_73,1_210,1_207,1_209,1_206",
     }
 
@@ -151,7 +168,7 @@ def get_all_stok():
         data=callback_data, timeout=60
     )
     log(f"Callback POST status: {r5.status_code}, boyut: {len(r5.text)}")
-    r4 = r5  # parse için r4'ü güncelle
+    r4 = r5
 
     # 4. HTML'den veriyi parse et
     from html.parser import HTMLParser as HP
