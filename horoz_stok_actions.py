@@ -230,9 +230,12 @@ if __name__ == "__main__":
         log("Horoz stok sorgulanıyor...")
         stok = get_all_stok()
         log(f"{len(stok)} ürün bulundu.")
-        with open("stok.json", "w", encoding="utf-8") as f:
-            json.dump(stok, f, ensure_ascii=False, indent=2)
-        log("stok.json yazıldı.")
+        if len(stok) > 0:
+            with open("stok.json", "w", encoding="utf-8") as f:
+                json.dump(stok, f, ensure_ascii=False, indent=2)
+            log("stok.json yazıldı.")
+        else:
+            log("Stok boş geldi, stok.json güncellenmedi — eski veri korunuyor.")
         if stok:
             log(json.dumps(dict(list(stok.items())[:5]), ensure_ascii=False))
     except Exception as e:
