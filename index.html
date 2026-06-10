@@ -452,7 +452,7 @@ function refreshTable() {
       } else if (isWrapCol(hT)) {
         cells += `<td class="wrap-col">${v || '-'}</td>`;
       } else {
-        if (colIndex >= priceStartIndex && !isNaN(v) && v !== "") {
+        if (colIndex >= priceStartIndex && !isNaN(v) && v !== "" && !hT.includes("STOK")) {
           cells += `<td>${Math.ceil(v).toLocaleString('tr-TR') + ' ₺'}</td>`;
         } else {
           cells += `<td>${v || '-'}</td>`;
