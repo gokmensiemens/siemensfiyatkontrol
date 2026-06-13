@@ -408,7 +408,7 @@ const fixStr = s => !s ? "" : String(s)
 
 const isFooterCol = hT =>
   !["HAKEDİŞ","ONLINE","PREMIUM","PHASE","BİP"].some(k => hT.includes(k)) &&
-  ["HAVALE","ÇEKİM","TAKSİT"].some(k => hT.includes(k));
+  ["HAVALE","ÇEKİM","TAKSİT","WEB"].some(k => hT.includes(k));
 
 const isWrapCol = hT => ["NOTLAR","KOŞUL","AÇIĞA"].some(k => hT.includes(k));
 
@@ -728,7 +728,7 @@ function calcTotals() {
     <div class="totals-section-label">BİP / Phase Out İndirimi</div>
     <div class="totals-col-list">
       <div class="totals-col-row">
-        <span class="tc-label">Toplam BİP/PHASEOUT İndirimi</span>
+        <span class="tc-label">Toplam İndirim</span>
         <span class="tc-val">${disc > 0 ? disc.toLocaleString('tr-TR') + ' ₺' : '-'}</span>
       </div>
     </div>
@@ -742,7 +742,7 @@ function calcTotals() {
     </div>
 
     <div class="totals-final-block">
-      <div class="totals-section-label">✅ Satılabilir Minimum Tutarlar</div>
+      <div class="totals-section-label">✅ Satılabilir Minimum</div>
       <div class="totals-col-list">${colRows(i => (base[i]||0) - disc - bVal)}</div>
     </div>
   `;
