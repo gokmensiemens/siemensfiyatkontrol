@@ -225,8 +225,26 @@ def get_all_stok():
 
     return stok
 
+def update_manifest():
+    """GitHub API'ye gitmeden, repodaki güncel .xlsx dosyasının adını
+    manifest.json'a yazar. index.html artık bu dosyayı okuyor."""
+    try:
+        xlsx_files = [f for f in os.listdir(".") if f.lower().endswith(".xlsx")]
+        if not xlsx_files:
+            log("manifest.json güncellenmedi: klasörde .xlsx dosyası yok.")
+            return
+        # Birden fazla varsa en son değiştirileni seç
+        xlsx_files.sort(key=lambda f: os.path.getmtime(f), reverse=True)
+        file_name = xlsx_files[0]
+        with open("manifest.json", "w", encoding="utf-8") as f:
+            json.dump({"fileName": file_name}, f, ensure_ascii=False, indent=2)
+        log(f"manifest.json yazıldı: {file_name}")
+    except Exception as e:
+        log(f"manifest.json güncellenirken hata: {e}")
+
 if __name__ == "__main__":
     try:
+        update_manifest()
         log("Horoz stok sorgulanıyor...")
         stok = get_all_stok()
         log(f"{len(stok)} ürün bulundu.")
