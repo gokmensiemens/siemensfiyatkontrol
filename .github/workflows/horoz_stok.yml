@@ -4,6 +4,9 @@ on:
   schedule:
     - cron: '0,10,20,30,40,50 6-19 * * *'
   workflow_dispatch:
+  push:
+    paths:
+      - '*.xlsx'
 
 permissions:
   contents: write
@@ -35,10 +38,10 @@ jobs:
         if: always()
         run: cat horoz_log.txt || echo "Log dosyası yok"
 
-      - name: stok.json'ı commit et
+      - name: stok.json ve manifest.json'ı commit et
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add stok.json
-          git diff --staged --quiet || git commit -m "stok güncellendi"
+          git add stok.json manifest.json
+          git diff --staged --quiet || git commit -m "stok/manifest güncellendi"
           git push
