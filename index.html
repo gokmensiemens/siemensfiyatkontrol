@@ -126,14 +126,13 @@ window.onload = async function() {
     .catch(() => { window._stokJson = {}; });
 
   try {
-    const repoResponse = await fetch('https://api.github.com/repos/gokmensiemens/siemensfiyatkontrol/contents/');
-    if (!repoResponse.ok) throw new Error("GitHub deposuna ulaşılamadı");
-    const repoFiles = await repoResponse.json();
+    const manifestResponse = await fetch('./manifest.json?_=' + Date.now());
+    if (!manifestResponse.ok) throw new Error("manifest.json bulunamadı");
+    const manifest = await manifestResponse.json();
 
-    const excelFile = repoFiles.find(file => file.name.endsWith('.xlsx'));
-    if (!excelFile) throw new Error("Klasörde Excel dosyası bulunamadı!");
+    const fileName = manifest.fileName;
+    if (!fileName) throw new Error("Klasörde Excel dosyası bulunamadı!");
 
-    const fileName = excelFile.name;
     const dateString = fileName.replace('.xlsx', '').replace(/_/g, ' ');
 
     const response = await fetch('./' + fileName);
