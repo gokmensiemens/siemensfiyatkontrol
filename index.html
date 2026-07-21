@@ -46,7 +46,8 @@
     .stok-canli { color: #155724 !important; background: #d4edda; border-radius: 3px; padding: 0 2px; }
     .stok-sifir  { color: #721c24 !important; background: #f8d7da; border-radius: 3px; padding: 0 2px; }
     #btnCanliStok { background: #9C1936; color: white; border: none; border-radius: 6px; padding: 6px 16px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; }
-    #btnCanliStok:hover { background: #7a1229; }
+    #btnCanliStok:hover { opacity: 0.85; }
+    #btnCanliStok.mode-excel { background: #1976d2; }
     #stokGuncelMsg { font-size: 11px; color: #888; margin-left: 8px; }
     #vknBar { display:flex; align-items:center; gap:6px; }
     #vknInp { padding:5px 10px; border:2px solid #6c63ff; border-radius:6px; font-size:12px; width:160px; }
@@ -67,7 +68,7 @@
   <div style="margin-bottom:10px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
     <div><b>FİYAT LİSTESİ YÜKLENDİ:</b> <span id="statusMsg" style="font-weight:bold; color:#007bff;">Liste Yükleniyor, lütfen bekleyin...</span></div>
     <div style="display:flex; align-items:center;">
-      <button id="btnCanliStok" onclick="canliStokTumunuGuncelle()">🔄 Horoz Lojistik'ten Güncel Stok Getir</button>
+      <button id="btnCanliStok" onclick="toggleStokMod()">📊 Excel Stoğuna Bak</button>
       <span id="stokGuncelMsg"></span>
       <span style="display:inline-block; width:40px; border-left:2px solid #ddd; margin:0 10px; height:24px; vertical-align:middle;"></span>
       <div id="vknBar">
@@ -99,6 +100,7 @@ let linkMap = {};
 let currentFocus = -1;
 let priceStartIndex = 13;
 let firstFooterIdx = 13;
+let canliStokAktif = true; // başlangıçta Horoz modu aktif
 
 const fixString = (str) => !str ? "" : String(str)
   .replace(/İ/g, 'i')
@@ -119,11 +121,61 @@ function fullReset() {
     closeAllLists();
 }
 
+// Stok mod toggle
+async function toggleStokMod() {
+  let btn = document.getElementById('btnCanliStok');
+  let msg = document.getElementById('stokGuncelMsg');
+
+  if (canliStokAktif) {
+    // Horoz modundan Excel moduna geç
+    canliStokAktif = false;
+    btn.textContent = '🔄 Horoz Lojistik Canlı Stoğuna Bak';
+    btn.classList.remove('mode-excel');
+    msg.textContent = '';
+    refreshTable(); // Excel stokunu göster, noktaları kaldır
+  } else {
+    // Excel modundan Horoz moduna geç
+    canliStokAktif = true;
+    btn.textContent = '📊 Excel Stoğuna Bak';
+    btn.classList.add('mode-excel');
+    btn.disabled = true;
+    msg.textContent = '⏳ Yükleniyor...';
+    try {
+      let res = await fetch('./stok.json?_=' + Date.now());
+      if (!res.ok) throw new Error('stok.json bulunamadı');
+      window._stokJson = await res.json();
+    } catch(e) {
+      msg.textContent = '❌ Stok verisi alınamadı';
+      btn.disabled = false;
+      canliStokAktif = false;
+      btn.textContent = '🔄 Horoz Lojistik Canlı Stoğuna Bak';
+      btn.classList.remove('mode-excel');
+      return;
+    }
+    let simdi = new Date().toLocaleTimeString('tr-TR');
+    msg.textContent = `✅ ${Object.keys(window._stokJson).length} ürün güncellendi (${simdi})`;
+    btn.disabled = false;
+    refreshTable(); // Horoz stokunu göster
+  }
+}
+
 window.onload = async function() {
-  fetch('./stok.json?_=' + Date.now())
-    .then(r => r.ok ? r.json() : {})
-    .then(d => { window._stokJson = d; })
-    .catch(() => { window._stokJson = {}; });
+  // Horoz stokunu arka planda yükle
+  try {
+    let res = await fetch('./stok.json?_=' + Date.now());
+    window._stokJson = res.ok ? await res.json() : {};
+  } catch(e) {
+    window._stokJson = {};
+  }
+
+  // Butonu Horoz modu olarak ayarla
+  let btn = document.getElementById('btnCanliStok');
+  btn.textContent = '📊 Excel Stoğuna Bak';
+  btn.classList.add('mode-excel');
+  if (window._stokJson && Object.keys(window._stokJson).length > 0) {
+    let simdi = new Date().toLocaleTimeString('tr-TR');
+    document.getElementById('stokGuncelMsg').textContent = `✅ ${Object.keys(window._stokJson).length} ürün güncellendi (${simdi})`;
+  }
 
   try {
     const manifestResponse = await fetch('./manifest.json?_=' + Date.now());
@@ -326,6 +378,14 @@ function _addPulseDot(span, isRed) {
     wrap.insertBefore(dot, span);
 }
 
+function _removePulseDot(span) {
+    let wrap = span.closest('.stok-canli-wrap');
+    if (wrap) {
+      wrap.parentElement.insertBefore(span, wrap);
+      wrap.remove();
+    }
+}
+
 async function vknSorgula() {
   let vkn = document.getElementById('vknInp').value.trim();
   let sonuc = document.getElementById('vknSonuc');
@@ -360,56 +420,6 @@ async function vknSorgula() {
     sonuc.innerHTML = '❌ Bağlantı hatası';
     sonuc.style.color = '#dc3545';
   }
-}
-
-async function canliStokTumunuGuncelle() {
-  let btn = document.getElementById('btnCanliStok');
-  let msg = document.getElementById('stokGuncelMsg');
-  btn.disabled = true;
-  msg.textContent = '⏳ Yükleniyor...';
-
-  try {
-    let res = await fetch('./stok.json?_=' + Date.now());
-    if (!res.ok) throw new Error('stok.json bulunamadı');
-    window._stokJson = await res.json();
-  } catch(e) {
-    msg.textContent = '❌ Stok verisi alınamadı';
-    btn.disabled = false;
-    return;
-  }
-
-  let guncellenen = 0;
-  cart.forEach(item => {
-    let urunKodu = item[heads[0]] || '';
-    let span = document.getElementById('stok-val-' + urunKodu);
-    if (!span) return;
-    let wrap = span.closest('.stok-canli-wrap');
-    if (wrap) {
-      wrap.parentElement.insertBefore(span, wrap);
-      wrap.remove();
-    }
-    let canli = window._stokJson[urunKodu];
-    if (canli === undefined || canli === null) {
-      span.textContent = '0';
-      span.className = 'stok-sifir';
-      _addPulseDot(span, true);
-      guncellenen++;
-      return;
-    } else if (canli === 0) {
-      span.textContent = '0';
-      span.className = 'stok-sifir';
-      _addPulseDot(span, true);
-    } else {
-      span.textContent = canli;
-      span.className = 'stok-canli';
-      _addPulseDot(span, false);
-    }
-    guncellenen++;
-  });
-
-  let simdi = new Date().toLocaleTimeString('tr-TR');
-  msg.textContent = `✅ ${guncellenen} ürün güncellendi (${simdi})`;
-  btn.disabled = false;
 }
 
 function refreshTable() {
@@ -462,6 +472,30 @@ function refreshTable() {
     tr.innerHTML = cells;
     bR.appendChild(tr);
   });
+
+  // Horoz modu aktifse stok noktalarını göster
+  if (canliStokAktif && window._stokJson) {
+    cart.forEach(item => {
+      let urunKodu = item[heads[0]] || '';
+      let span = document.getElementById('stok-val-' + urunKodu);
+      if (!span) return;
+      let canli = window._stokJson[urunKodu];
+      if (canli === undefined || canli === null) {
+        span.textContent = '0';
+        span.className = 'stok-sifir';
+        _addPulseDot(span, true);
+      } else if (canli === 0) {
+        span.textContent = '0';
+        span.className = 'stok-sifir';
+        _addPulseDot(span, true);
+      } else {
+        span.textContent = canli;
+        span.className = 'stok-canli';
+        _addPulseDot(span, false);
+      }
+    });
+  }
+
   calc();
 }
 
