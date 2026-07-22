@@ -132,6 +132,8 @@ async function toggleStokMod() {
     btn.textContent = '🔄 Horoz Lojistik Canlı Stoğuna Bak';
     btn.classList.remove('mode-excel');
     msg.textContent = '';
+    renderHeader();
+    renderHeader();
     refreshTable(); // Excel stokunu göster, noktaları kaldır
   } else {
     // Excel modundan Horoz moduna geç
@@ -155,6 +157,7 @@ async function toggleStokMod() {
     let simdi = new Date().toLocaleTimeString('tr-TR');
     msg.textContent = `✅ ${Object.keys(window._stokJson).length} ürün güncellendi (${simdi})`;
     btn.disabled = false;
+    renderHeader();
     refreshTable(); // Horoz stokunu göster
   }
 }
@@ -580,10 +583,11 @@ function renderFinalRow(t, bVal) {
 
 function renderHeader() {
   document.getElementById('hR').innerHTML =
-    "<tr>" + heads.map(h => {
+    "<tr>" + heads.map((h, i) => {
       let hT = h.toUpperCase();
       let cls = isWrapCol(hT) ? ' class="wrap-col"' : '';
-      return `<th${cls}>${h.split(' ').join('<br>')}</th>`;
+      let label = (canliStokAktif && i === 2) ? 'HOROZ<br>CANLI<br>STOK' : h.split(' ').join('<br>');
+      return `<th${cls}>${label}</th>`;
     }).join('') + "</tr>";
 }
 </script>
