@@ -100,19 +100,26 @@ let stokTarihi = "";
 
 // Ambar eşleştirme: fiyat excel sütun keyword → stok xlsx ambar adı
 // Önce sütun başlığını keyword ile eşleştir
-const AMBAR_MAP = [
-  { keyword: /studioline.*horoz|horoz.*studioline/i, ambar: null },
-  { keyword: /yildiz|yıldız/i,                        ambar: 'YILDIZ KULE DEPO' },
-  { keyword: h => /cam/i.test(h) && /of[iİ]s/i.test(h) && /te[şs]hir/i.test(h), ambar: 'CAM OFİS TEŞHİR' },
-  { keyword: h => /cam/i.test(h) && /of[iİ]s/i.test(h) && !/te[şs]hir/i.test(h), ambar: 'CAM OFİS' },
-  { keyword: /studio.*cepa|cepa.*studio/i,             ambar: 'CEPA STUDYOLINE TEŞHİR' },
-  { keyword: /ankamall/i,                              ambar: 'ANKAMALL SIEMENS' },
-  { keyword: /\bcepa\b/i,                              ambar: 'CEPA SIEMENS' },
-  { keyword: /one\s*tower/i,                           ambar: 'ONE TOWER' },
-  { keyword: /panora/i,                                ambar: 'PANORA' },
-  { keyword: /optimum|opt[iı]mum/i,                   ambar: 'OPTİMUM SİEMENS' },
-  { keyword: /internet.*depo|depo.*internet/i,         ambar: 'İNTERNET DEPO' },
-];
+// Ambar eşleştirme — sütun adını normalize edip karşılaştır
+function getAmbarForHead(h) {
+  const n = h.toUpperCase()
+    .replace(/İ/g,'I').replace(/Ğ/g,'G').replace(/Ü/g,'U')
+    .replace(/Ş/g,'S').replace(/Ö/g,'O').replace(/Ç/g,'C')
+    .replace(/\s+/g,' ').trim();
+  if (/STUDIOLINE.*HOROZ|HOROZ.*STUDIOLINE/.test(n)) return null;
+  if (/YILDIZ/.test(n)) return 'YILDIZ KULE DEPO';
+  if (/CAM.*OFIS.*TESHIR|CAM.*OFIS.*TEŞHIR/.test(n)) return 'CAM OFİS TEŞHİR';
+  if (/CAM.*OFIS/.test(n)) return 'CAM OFİS';
+  if (/STUDIO.*CEPA|CEPA.*STUDIO/.test(n)) return 'CEPA STUDYOLINE TEŞHİR';
+  if (/ANKAMALL/.test(n)) return 'ANKAMALL SIEMENS';
+  if (/\bCEPA\b/.test(n) && !/STUDIO/.test(n)) return 'CEPA SIEMENS';
+  if (/ONE.*TOWER|ONE\s*TOWER/.test(n)) return 'ONE TOWER';
+  if (/PANORA/.test(n)) return 'PANORA';
+  if (/OPTIMUM/.test(n)) return 'OPTİMUM SİEMENS';
+  if (/INTERNET.*DEPO/.test(n)) return 'İNTERNET DEPO';
+  return undefined;
+}
+const AMBAR_MAP = []; // artık kullanılmıyor, getAmbarForHead direkt çağrılıyor
 
 // Horoz canlı sütunu (Studioline hariç ilk HOROZ sütunu)
 function isHorozCanli(h) {
@@ -120,13 +127,6 @@ function isHorozCanli(h) {
   return hU.includes('HOROZ') && !(/STUDIOLINE/i.test(h));
 }
 
-function getAmbarForHead(h) {
-  for (const m of AMBAR_MAP) {
-    const match = typeof m.keyword === 'function' ? m.keyword(h) : m.keyword.test(h);
-    if (match) return m.ambar; // null = studioline (xlsx'ten oku)
-  }
-  return undefined; // eşleşme yok
-}
 
 function isToplam(h) {
   return /toplam\s*stok/i.test(h);
