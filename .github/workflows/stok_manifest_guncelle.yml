@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '*_STOK.xlsx'
+      - '*_STOK.XLSX'
 
 permissions:
   contents: write
@@ -16,7 +17,7 @@ jobs:
 
       - name: Stok dosyasını bul ve manifest güncelle
         run: |
-          STOK_FILE=$(ls *_STOK.xlsx 2>/dev/null | sort | tail -1)
+          STOK_FILE=$(ls -1 | grep -i "_STOK\.xlsx$" | sort | tail -1)
           if [ -z "$STOK_FILE" ]; then
             echo "Stok dosyası bulunamadı"
             exit 0
@@ -29,5 +30,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add stok_manifest.json
-          git diff --staged --quiet || git commit -m "stok_manifest güncellendi"
+          git diff --staged --quiet || git commit -m "stok_manifest güncellendi: $STOK_FILE"
           git push
