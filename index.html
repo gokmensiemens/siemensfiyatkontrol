@@ -262,9 +262,8 @@ function getHeadLabel(h) {
 
   // Başlığa tarihi ekle
   if (!stokTarihi) return h;
-  // Sütun adından baştaki tarih+ay ifadesini temizle, yoksa olduğu gibi kullan
+  // Sütun adından baştaki tarih+ay kısmını temizle
   const kisaAd = h.replace(/^\d+\s*(OCAK|ŞUBAT|MART|NİSAN|MAYIS|HAZİRAN|TEMMUZ|AĞUSTOS|EYLÜL|EKİM|KASIM|ARALIK)\s*/i, '').trim();
-  // Studioline Horoz için tarih ekleme
   if (ambar === null) return h;
   return `${stokTarihi}\n${kisaAd}`;
 }
