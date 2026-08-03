@@ -177,16 +177,19 @@ async function stokXlsxYukle() {
     const ws = wb.Sheets[wb.SheetNames[0]];
     // 1. satır rapor adı, 2. satır başlık — raw array oku
     const rawRows = XLSX.utils.sheet_to_json(ws, {defval:"", header:1});
-    if (rawRows.length < 3) return;
-    const headerRow = rawRows[1];
+    if (rawRows.length < 2) return;
+    // Başlık satırını dinamik bul
+    let headerIdx = rawRows.findIndex(r => Array.isArray(r) && r.indexOf('Malzeme (Sınıfı) Kodu') >= 0);
+    if (headerIdx < 0) { console.log('Başlık satırı bulunamadı'); return; }
+    const headerRow = rawRows[headerIdx];
     const kodIdx    = headerRow.indexOf('Malzeme (Sınıfı) Kodu');
     const ambarIdx  = headerRow.indexOf('Ambar Adı');
     const miktarIdx = headerRow.indexOf('Gerçek Stok');
-    console.log('Stok xlsx indeksler:', {kodIdx, ambarIdx, miktarIdx});
+    console.log('Stok xlsx indeksler:', {headerIdx, kodIdx, ambarIdx, miktarIdx});
     if (kodIdx < 0 || ambarIdx < 0 || miktarIdx < 0) { console.log('Başlıklar bulunamadı'); return; }
 
     stokXlsxData = {};
-    for (let i = 2; i < rawRows.length; i++) {
+    for (let i = headerIdx + 1; i < rawRows.length; i++) {
       const row   = rawRows[i];
       const kod   = String(row[kodIdx]   || '').trim();
       const ambar = String(row[ambarIdx] || '').trim().toUpperCase();
