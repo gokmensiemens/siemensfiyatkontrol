@@ -103,8 +103,8 @@ let stokTarihi = "";
 const AMBAR_MAP = [
   { keyword: /studioline.*horoz|horoz.*studioline/i, ambar: null },
   { keyword: /yildiz|yıldız/i,                        ambar: 'YILDIZ KULE DEPO' },
-  { keyword: /cam\s*ofis\s*te[şs]hir/i,              ambar: 'CAM OFİS TEŞHİR' },
-  { keyword: /cam\s*ofis/i,                            ambar: 'CAM OFİS' },
+  { keyword: /cam.{0,2}of[iİ]s.{0,2}te[şs]hir/i,      ambar: 'CAM OFİS TEŞHİR' },
+  { keyword: /cam.{0,2}of[iİ]s/i,                       ambar: 'CAM OFİS' },
   { keyword: /studio.*cepa|cepa.*studio/i,             ambar: 'CEPA STUDYOLINE TEŞHİR' },
   { keyword: /ankamall/i,                              ambar: 'ANKAMALL SIEMENS' },
   { keyword: /\bcepa\b/i,                              ambar: 'CEPA SIEMENS' },
