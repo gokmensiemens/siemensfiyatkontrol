@@ -175,7 +175,7 @@ async function stokXlsxYukle() {
     const buf = await (await fetch('./' + manifest.fileName + '?_=' + Date.now())).arrayBuffer();
     const wb = XLSX.read(buf, {type:'array'});
     const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, {defval:""});
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: "", range: 1 });
 
     stokXlsxData = {};
     if (!rows.length) return;
