@@ -178,15 +178,22 @@ async function stokXlsxYukle() {
     const rows = XLSX.utils.sheet_to_json(ws, {defval:""});
 
     stokXlsxData = {};
+    if (!rows.length) return;
+    // Sütun adlarını bul
+    const keys = Object.keys(rows[0]);
+    const kodKey = keys.find(k => /malzeme|stok\s*kodu|ürün\s*kodu|materyal/i.test(k)) || keys[1];
+    const ambarKey = keys.find(k => /ambar/i.test(k)) || keys[6];
+    const miktarKey = keys.find(k => /gerçek\s*stok|miktar|stok/i.test(k) && !/blok/i.test(k)) || keys[8];
+    log_keys = {kodKey, ambarKey, miktarKey};
     rows.forEach(row => {
-      const kod = String(row['Malzeme (Sınıfı) Kodu'] || '').trim();
-      const ambar = String(row['Ambar Adı'] || '').trim().toUpperCase();
-      const miktar = parseInt(row['Gerçek Stok']) || 0;
-      if (!kod || ambar === 'AMBAR ADI') return;
+      const kod = String(row[kodKey] || '').trim();
+      const ambar = String(row[ambarKey] || '').trim().toUpperCase();
+      const miktar = parseInt(row[miktarKey]) || 0;
+      if (!kod) return;
       if (!stokXlsxData[kod]) stokXlsxData[kod] = {};
-      // Birden fazla satır olabilir, topla
       stokXlsxData[kod][ambar] = (stokXlsxData[kod][ambar] || 0) + miktar;
     });
+    console.log('Stok xlsx sütunları:', log_keys, '| Örnek:', Object.entries(stokXlsxData).slice(0,2));
   } catch(e) {
     console.log('Stok xlsx yüklenemedi:', e);
   }
@@ -243,14 +250,17 @@ function getHeadLabel(h) {
 
   if (isHorozCanli(h)) return `HOROZ\nCANLI\nSTOK`;
   if (isToplam(h)) return `TOPLAM\nSTOK`;
+  if (hU.includes('BEKLEYEN')) return h;
 
   const ambar = getAmbarForHead(h);
   if (ambar === undefined || ambar === null) return h;
 
   // Başlığa tarihi ekle
   if (!stokTarihi) return h;
-  // Sütun adının özünü al (YILDIZ DEPO, CAM OFİS vs)
-  const kisaAd = h.replace(/\d+\s*(OCAK|ŞUBAT|MART|NİSAN|MAYIS|HAZİRAN|TEMMUZ|AĞUSTOS|EYLÜL|EKİM|KASIM|ARALIK)\s*/i, '').trim();
+  // Sütun adından baştaki tarih+ay ifadesini temizle, yoksa olduğu gibi kullan
+  const kisaAd = h.replace(/^\d+\s*(OCAK|ŞUBAT|MART|NİSAN|MAYIS|HAZİRAN|TEMMUZ|AĞUSTOS|EYLÜL|EKİM|KASIM|ARALIK)\s*/i, '').trim();
+  // Studioline Horoz için tarih ekleme
+  if (ambar === null) return h;
   return `${stokTarihi}\n${kisaAd}`;
 }
 
