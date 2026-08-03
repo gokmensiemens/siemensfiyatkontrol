@@ -103,8 +103,8 @@ let stokTarihi = "";
 const AMBAR_MAP = [
   { keyword: /studioline.*horoz|horoz.*studioline/i, ambar: null },
   { keyword: /yildiz|yıldız/i,                        ambar: 'YILDIZ KULE DEPO' },
-  { keyword: /cam.{0,2}of[iİ]s.{0,2}te[şs]hir/i,      ambar: 'CAM OFİS TEŞHİR' },
-  { keyword: /cam.{0,2}of[iİ]s/i,                       ambar: 'CAM OFİS' },
+  { keyword: h => /cam/i.test(h) && /of[iİ]s/i.test(h) && /te[şs]hir/i.test(h), ambar: 'CAM OFİS TEŞHİR' },
+  { keyword: h => /cam/i.test(h) && /of[iİ]s/i.test(h) && !/te[şs]hir/i.test(h), ambar: 'CAM OFİS' },
   { keyword: /studio.*cepa|cepa.*studio/i,             ambar: 'CEPA STUDYOLINE TEŞHİR' },
   { keyword: /ankamall/i,                              ambar: 'ANKAMALL SIEMENS' },
   { keyword: /\bcepa\b/i,                              ambar: 'CEPA SIEMENS' },
@@ -122,7 +122,8 @@ function isHorozCanli(h) {
 
 function getAmbarForHead(h) {
   for (const m of AMBAR_MAP) {
-    if (m.keyword.test(h)) return m.ambar; // null = studioline (xlsx'ten oku)
+    const match = typeof m.keyword === 'function' ? m.keyword(h) : m.keyword.test(h);
+    if (match) return m.ambar; // null = studioline (xlsx'ten oku)
   }
   return undefined; // eşleşme yok
 }
