@@ -57,3 +57,534 @@
   </style>
 </head>
 <body>
+<div class="card">
+  <div style="margin-bottom:10px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+    <div><b>FİYAT LİSTESİ YÜKLENDİ:</b> <span id="statusMsg" style="font-weight:bold; color:#007bff;">Liste Yükleniyor, lütfen bekleyin...</span></div>
+    <div style="display:flex; align-items:center;">
+      <button id="btnCanliStok" onclick="toggleStokMod()">📊 Excel Stoğuna Bak</button>
+      <span id="stokGuncelMsg"></span>
+      <span style="display:inline-block; width:40px; border-left:2px solid #ddd; margin:0 10px; height:24px; vertical-align:middle;"></span>
+      <div id="vknBar">
+        <input id="vknInp" type="text" placeholder="VKN / TCKN girin..." maxlength="11" onkeydown="if(event.key==='Enter') vknSorgula()">
+        <button id="btnVkn" onclick="vknSorgula()">🔍 Ünvan Sorgula</button>
+        <span id="vknSonuc"></span>
+      </div>
+    </div>
+  </div>
+  <div class="search-container">
+    <div class="autocomplete-wrapper">
+      <input type="text" id="barcodeInp" placeholder="ÜRÜN KODU VEYA ADI YAZIN/YAPIŞTIRIN VE ENTER'A BASIN" autocomplete="off">
+    </div>
+    <button onclick="fullReset();" style="background:#dc3545; color:white; border:none; border-radius:8px; cursor:pointer; padding:0 20px; font-weight:bold;">TEMİZLE</button>
+  </div>
+  <table id="mainTable">
+    <thead id="hR"></thead>
+    <tbody id="bR"></tbody>
+    <tfoot id="fR"></tfoot>
+  </table>
+</div>
+
+<script>
+let db = [], cart = [], heads = [], manualBundleVal = "";
+let bipCol = "", phCol = "";
+let linkMap = {};
+let currentFocus = -1;
+let priceStartIndex = 13;
+let firstFooterIdx = 13;
+let canliStokAktif = true;
+
+// Stok xlsx'ten okunan ambar verileri: { urunKodu: { ambarKey: miktar } }
+let stokXlsxData = {};
+// Stok dosyasının tarihi (başlık için)
+let stokTarihi = "";
+
+// Ambar eşleştirme: fiyat excel sütun keyword → stok xlsx ambar adı
+// Önce sütun başlığını keyword ile eşleştir
+const AMBAR_MAP = [
+  { keyword: /studioline.*horoz|horoz.*studioline/i, ambar: null },        // Excel'den oku — studioline
+  { keyword: /yildiz|yıldız/i,                        ambar: 'YILDIZ KULE DEPO' },
+  { keyword: /cam\s*ofis\s*teşhir|cam\s*ofis\s*teshir/i, ambar: 'CAM OFİS TEŞHİR' },
+  { keyword: /cam\s*ofis/i,                            ambar: 'CAM OFİS' },
+  { keyword: /studio.*cepa|cepa.*studio/i,             ambar: 'CEPA STUDYOLINE TEŞHİR' },
+  { keyword: /ankamall/i,                              ambar: 'ANKAMALL SIEMENS' },
+  { keyword: /\bcepa\b/i,                              ambar: 'CEPA SIEMENS' },
+  { keyword: /one\s*tower/i,                           ambar: 'ONE TOWER' },
+  { keyword: /panora/i,                                ambar: 'PANORA' },
+  { keyword: /optimum|optımum/i,                       ambar: 'OPTİMUM SİEMENS' },
+  { keyword: /internet.*depo|depo.*internet/i,         ambar: 'İNTERNET DEPO' },
+];
+
+// Horoz canlı sütunu (Studioline hariç ilk HOROZ sütunu)
+function isHorozCanli(h) {
+  const hU = h.toUpperCase();
+  return hU.includes('HOROZ') && !(/STUDIOLINE/i.test(h));
+}
+
+function getAmbarForHead(h) {
+  for (const m of AMBAR_MAP) {
+    if (m.keyword.test(h)) return m.ambar; // null = studioline (xlsx'ten oku)
+  }
+  return undefined; // eşleşme yok
+}
+
+function isToplam(h) {
+  return /toplam\s*stok/i.test(h);
+}
+
+const fixString = (str) => !str ? "" : String(str)
+  .replace(/İ/g,'i').replace(/I/g,'ı')
+  .toLocaleLowerCase('tr-TR').replace(/\s/g,'').trim();
+
+function isWrapCol(hT) {
+  return ["NOTLAR","KOŞUL","AÇIĞA"].some(k => hT.includes(k));
+}
+
+function isFooterCol(hT) {
+  if (["HAKEDİŞ","ONLINE","PREMIUM","PHASE","BİP"].some(k => hT.includes(k))) return false;
+  return ["HAVALE","ÇEKİM","TAKSİT","WEB"].some(k => hT.includes(k));
+}
+
+function fullReset() {
+  cart = []; manualBundleVal = "";
+  refreshTable();
+  document.getElementById('barcodeInp').value = "";
+  document.getElementById('barcodeInp').focus();
+  closeAllLists();
+}
+
+// Tarih string'ini Türkçe'ye çevir: "01_08_2026" → "1 AĞUSTOS"
+function dosyaAdindanTarih(fileName) {
+  const aylar = ['','OCAK','ŞUBAT','MART','NİSAN','MAYIS','HAZİRAN','TEMMUZ','AĞUSTOS','EYLÜL','EKİM','KASIM','ARALIK'];
+  const m = fileName.match(/(\d{1,2})[_\-\s](\d{1,2})[_\-\s](\d{4})/);
+  if (!m) return fileName.replace('.xlsx','').replace(/_/g,' ');
+  const gun = parseInt(m[1]);
+  const ay = parseInt(m[2]);
+  return `${gun} ${aylar[ay] || m[2]}`;
+}
+
+// Stok xlsx yükle
+async function stokXlsxYukle() {
+  try {
+    const mRes = await fetch('./stok_manifest.json?_=' + Date.now());
+    if (!mRes.ok) return;
+    const manifest = await mRes.json();
+    if (!manifest.fileName) return;
+
+    stokTarihi = dosyaAdindanTarih(manifest.fileName);
+
+    const buf = await (await fetch('./' + manifest.fileName + '?_=' + Date.now())).arrayBuffer();
+    const wb = XLSX.read(buf, {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, {defval:""});
+
+    stokXlsxData = {};
+    if (!rows.length) return;
+    // Sütun adlarını bul
+    const keys = Object.keys(rows[0]);
+    const kodKey = keys.find(k => /malzeme|stok\s*kodu|ürün\s*kodu|materyal/i.test(k)) || keys[1];
+    const ambarKey = keys.find(k => /ambar/i.test(k)) || keys[6];
+    const miktarKey = keys.find(k => /gerçek\s*stok|miktar|stok/i.test(k) && !/blok/i.test(k)) || keys[8];
+    log_keys = {kodKey, ambarKey, miktarKey};
+    rows.forEach(row => {
+      const kod = String(row[kodKey] || '').trim();
+      const ambar = String(row[ambarKey] || '').trim().toUpperCase();
+      const miktar = parseInt(row[miktarKey]) || 0;
+      if (!kod) return;
+      if (!stokXlsxData[kod]) stokXlsxData[kod] = {};
+      stokXlsxData[kod][ambar] = (stokXlsxData[kod][ambar] || 0) + miktar;
+    });
+    console.log('Stok xlsx sütunları:', log_keys, '| Örnek:', Object.entries(stokXlsxData).slice(0,2));
+  } catch(e) {
+    console.log('Stok xlsx yüklenemedi:', e);
+  }
+}
+
+// Bir ürün kodu için belirli ambarın stok miktarını getir
+function getAmbarStok(urunKodu, ambarAdi) {
+  if (!stokXlsxData[urunKodu]) return 0;
+  return stokXlsxData[urunKodu][ambarAdi.toUpperCase()] || 0;
+}
+
+// Sütun için stok değerini hesapla
+function getStokForHead(h, urunKodu, excelVal) {
+  if (!canliStokAktif) return { val: excelVal !== undefined && excelVal !== '' ? excelVal : '-', dot: false, dotRed: false };
+
+  const hU = h.toUpperCase();
+
+  // Horoz canlı (Studioline hariç)
+  if (isHorozCanli(h)) {
+    const canli = window._stokJson ? (window._stokJson[urunKodu] ?? null) : null;
+    const v = canli === null ? 0 : canli;
+    return { val: v, dot: true, dotRed: v === 0, cls: v > 0 ? 'stok-canli' : 'stok-sifir' };
+  }
+
+  // TOPLAM STOK
+  if (isToplam(h)) {
+    const horozCanli = window._stokJson ? (window._stokJson[urunKodu] ?? 0) : 0;
+    let toplam = horozCanli;
+    // Diğer tüm ambarları topla
+    if (stokXlsxData[urunKodu]) {
+      Object.values(stokXlsxData[urunKodu]).forEach(v => toplam += v);
+    }
+    return { val: toplam, dot: false };
+  }
+
+  // Ambar eşleştirmesi
+  const ambar = getAmbarForHead(h);
+  if (ambar === undefined) return { val: excelVal !== undefined && excelVal !== '' ? excelVal : '-', dot: false };
+  if (ambar === null) {
+    // Studioline — xlsx'ten oku ama ambar adı nedir?
+    // "CEPA STUDYOLINE TEŞHİR" değil, "CEPA STUDYOLINE" olabilir — direkt stokXlsxData'ya bakacağız
+    // Studioline Horoz için stokXlsxData'da studioline ambarı olmadığından excelden oku
+    return { val: excelVal !== undefined && excelVal !== '' ? excelVal : '-', dot: false };
+  }
+
+  const v = getAmbarStok(urunKodu, ambar);
+  return { val: v, dot: false };
+}
+
+// Sütun başlığını mod'a göre güncelle
+function getHeadLabel(h) {
+  if (!canliStokAktif) return h;
+  const hU = h.toUpperCase();
+
+  if (isHorozCanli(h)) return `HOROZ\nCANLI\nSTOK`;
+  if (isToplam(h)) return `TOPLAM\nSTOK`;
+  if (hU.includes('BEKLEYEN')) return h;
+
+  const ambar = getAmbarForHead(h);
+  if (ambar === undefined || ambar === null) return h;
+
+  // Başlığa tarihi ekle
+  if (!stokTarihi) return h;
+  // Sütun adından baştaki tarih+ay ifadesini temizle, yoksa olduğu gibi kullan
+  const kisaAd = h.replace(/^\d+\s*(OCAK|ŞUBAT|MART|NİSAN|MAYIS|HAZİRAN|TEMMUZ|AĞUSTOS|EYLÜL|EKİM|KASIM|ARALIK)\s*/i, '').trim();
+  // Studioline Horoz için tarih ekleme
+  if (ambar === null) return h;
+  return `${stokTarihi}\n${kisaAd}`;
+}
+
+async function toggleStokMod() {
+  const btn = document.getElementById('btnCanliStok');
+  const msg = document.getElementById('stokGuncelMsg');
+
+  if (canliStokAktif) {
+    canliStokAktif = false;
+    btn.textContent = '🔄 Horoz Lojistik Canlı Stoğuna Bak';
+    btn.classList.remove('mode-excel');
+    msg.textContent = '';
+    renderHeader();
+    refreshTable();
+  } else {
+    canliStokAktif = true;
+    btn.textContent = '📊 Excel Stoğuna Bak';
+    btn.classList.add('mode-excel');
+    btn.disabled = true;
+    msg.textContent = '⏳ Yükleniyor...';
+    try {
+      const res = await fetch('./stok.json?_=' + Date.now());
+      if (!res.ok) throw new Error();
+      window._stokJson = await res.json();
+    } catch {
+      msg.textContent = '❌ Stok verisi alınamadı';
+      btn.disabled = false;
+      canliStokAktif = false;
+      btn.textContent = '🔄 Horoz Lojistik Canlı Stoğuna Bak';
+      btn.classList.remove('mode-excel');
+      return;
+    }
+    const simdi = new Date().toLocaleTimeString('tr-TR');
+    msg.textContent = `✅ ${Object.keys(window._stokJson).length} ürün güncellendi (${simdi})`;
+    btn.disabled = false;
+    renderHeader();
+    refreshTable();
+  }
+}
+
+window.onload = async function() {
+  // Horoz stok.json ve stok xlsx'i paralel yükle
+  const [stokRes] = await Promise.allSettled([
+    fetch('./stok.json?_=' + Date.now()).then(r => r.ok ? r.json() : {}),
+    stokXlsxYukle()
+  ]);
+  window._stokJson = stokRes.status === 'fulfilled' ? stokRes.value : {};
+
+  const btn = document.getElementById('btnCanliStok');
+  btn.textContent = '📊 Excel Stoğuna Bak';
+  btn.classList.add('mode-excel');
+  if (window._stokJson && Object.keys(window._stokJson).length > 0) {
+    const simdi = new Date().toLocaleTimeString('tr-TR');
+    document.getElementById('stokGuncelMsg').textContent = `✅ ${Object.keys(window._stokJson).length} ürün güncellendi (${simdi})`;
+  }
+
+  try {
+    const manifestResponse = await fetch('./manifest.json?_=' + Date.now());
+    if (!manifestResponse.ok) throw new Error("manifest.json bulunamadı");
+    const manifest = await manifestResponse.json();
+    const fileName = manifest.fileName;
+    if (!fileName) throw new Error("Excel dosyası bulunamadı!");
+    const dateString = fileName.replace('.xlsx','').replace(/_/g,' ');
+
+    const buffer = await (await fetch('./' + fileName)).arrayBuffer();
+    const w = XLSX.read(buffer, {type:'array'});
+
+    w.SheetNames.forEach(sheetName => {
+      const rows = XLSX.utils.sheet_to_json(w.Sheets[sheetName], {defval:""});
+      if (!rows.length) return;
+      const keys = Object.keys(rows[0]);
+      const linkKey = keys.find(k => k.toUpperCase().includes("LİNK") || k.toUpperCase().includes("URL") || k.toUpperCase().includes("LINK"));
+      const codeKey = keys.find(k => k.toUpperCase().includes("NO") || k.toUpperCase().includes("KOD"));
+      if (linkKey && codeKey) rows.forEach(rw => { let c=fixString(rw[codeKey]); if(c&&rw[linkKey]) linkMap[c]=rw[linkKey]; });
+    });
+
+    const data = XLSX.utils.sheet_to_json(w.Sheets[w.SheetNames[0]], {defval:""});
+    if (!data.length) return;
+
+    heads = Object.keys(data[0]).filter(h => {
+      const hU = h.toUpperCase();
+      if (hU.includes("PRİM HARİÇ") || h.includes("__EMPTY")) return false;
+      if (/^3\s*TAKSİT/i.test(hU) || /^9\s*TAKSİT/i.test(hU)) return false;
+      return true;
+    });
+
+    let oi = heads.findIndex(h => h.toUpperCase().includes("ONLINE"));
+    if(oi>-1){let ok=heads.splice(oi,1)[0];let bi=heads.findIndex(h=>h.toUpperCase().includes("BİP"));bi>-1?heads.splice(bi,0,ok):heads.push(ok);}
+    let ai = heads.findIndex(h => h.toUpperCase().includes("AÇIĞA")||h.toUpperCase().includes("ACIGA"));
+    if(ai>-1){let ak=heads.splice(ai,1)[0];let ti=heads.findIndex(h=>h.toUpperCase().includes("TOPTAN"));ti>-1?heads.splice(ti,0,ak):heads.push(ak);}
+
+    bipCol = heads.find(x => x.toUpperCase().includes("BİP"));
+    phCol  = heads.find(x => x.toUpperCase().includes("PHASE"));
+    db = data;
+
+    let toptanIdx = heads.findIndex(h => h.toUpperCase().includes("TOPTAN"));
+    priceStartIndex = (toptanIdx>-1) ? toptanIdx : 13;
+    firstFooterIdx = heads.findIndex(h => isFooterCol(h.toUpperCase()));
+    if (firstFooterIdx===-1) firstFooterIdx = priceStartIndex;
+
+    const linkCount = db.filter(row => linkMap[fixString(row[heads[0]])]).length;
+    document.getElementById('statusMsg').innerText = `${dateString} (${linkCount} ürün için web sayfası bulundu. Ürünlerin isimlerine tıklayarak web sayfalarına ulaşabilirsiniz.)`;
+
+    renderHeader();
+  } catch(e) {
+    document.getElementById('statusMsg').innerText = "Fiyat listesi yüklenemedi! (" + e.message + ")";
+    document.getElementById('statusMsg').style.color = "red";
+  }
+};
+
+const inp = document.getElementById('barcodeInp');
+inp.addEventListener("input", function() {
+  let val = this.value;
+  closeAllLists();
+  if (!val) return;
+  currentFocus = -1;
+  let a = document.createElement("DIV");
+  a.setAttribute("id", this.id + "autocomplete-list");
+  a.setAttribute("class", "autocomplete-items");
+  this.parentNode.appendChild(a);
+  let count = 0;
+  let searchStr = fixString(val);
+  for (let i=0; i<db.length; i++) {
+    let code = db[i]["STOK KODU"] || db[i][heads[0]] || "";
+    let desc = db[i][heads[1]] || "";
+    let isStudio = desc.toLowerCase().includes("studioline");
+    let targetCol = isStudio ? heads[3] : heads[2];
+    let stokMiktari = targetCol && db[i][targetCol]!==undefined && db[i][targetCol]!=="" ? db[i][targetCol] : "0";
+    if ((code && fixString(code).includes(searchStr)) || (desc && fixString(desc).includes(searchStr))) {
+      let b = document.createElement("DIV");
+      b.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;width:100%;"><span><strong>${code}</strong> - ${desc}</span><span style="background:#e3f2fd;color:#007bff;border:1px solid #007bff;padding:4px 8px;border-radius:6px;font-weight:bold;font-size:13px;white-space:nowrap;margin-right:25px;">${targetCol} Stok: ${stokMiktari}</span></div>`;
+      b.innerHTML += `<input type="hidden" value="${code}">`;
+      b.addEventListener("click", function() {
+        let selectedCode = this.getElementsByTagName("input")[0].value;
+        let item = db.find(p => (p["STOK KODU"]||p[heads[0]])=== selectedCode);
+        if(item) cart.push({...item});
+        refreshTable();
+        inp.value = "";
+        closeAllLists();
+        inp.focus();
+      });
+      a.appendChild(b);
+      if (++count >= 100) break;
+    }
+  }
+});
+
+inp.addEventListener("keydown", function(e) {
+  let x = document.getElementById(this.id + "autocomplete-list");
+  if (x) x = x.getElementsByTagName("div");
+  if (e.keyCode==40){currentFocus++;addActive(x);}
+  else if(e.keyCode==38){currentFocus--;addActive(x);}
+  else if(e.keyCode==13){
+    e.preventDefault();
+    if(currentFocus>-1){if(x)x[currentFocus].click();}
+    else{
+      this.value.split(/[\s,]+/).forEach(v=>{
+        let item=db.find(p=>fixString(p["STOK KODU"]||p[heads[0]])===fixString(v));
+        if(item)cart.push({...item});
+      });
+      refreshTable(); this.value=""; closeAllLists();
+    }
+  }
+});
+
+function addActive(x){if(!x)return;removeActive(x);if(currentFocus>=x.length)currentFocus=0;if(currentFocus<0)currentFocus=x.length-1;x[currentFocus].classList.add("autocomplete-active");}
+function removeActive(x){for(let i=0;i<x.length;i++)x[i].classList.remove("autocomplete-active");}
+function closeAllLists(elmnt){let x=document.getElementsByClassName("autocomplete-items");for(let i=0;i<x.length;i++){if(elmnt!=x[i]&&elmnt!=inp&&x[i].parentNode)x[i].parentNode.removeChild(x[i]);}}
+document.addEventListener("click",function(e){closeAllLists(e.target);});
+
+function removeItem(i){cart.splice(i,1);if(!cart.length)manualBundleVal="";refreshTable();}
+
+function _addPulseDot(span,isRed){
+  let existing=span.closest('.stok-canli-wrap');
+  if(existing){let dot=existing.querySelector('.pulse-dot');if(dot)dot.className='pulse-dot'+(isRed?' dot-red':'');return;}
+  let td=span.parentElement;
+  let wrap=document.createElement('span');wrap.className='stok-canli-wrap';
+  td.insertBefore(wrap,span);wrap.appendChild(span);
+  let dot=document.createElement('span');dot.className='pulse-dot'+(isRed?' dot-red':'');
+  wrap.insertBefore(dot,span);
+}
+
+function _removePulseDot(span){
+  let wrap=span.closest('.stok-canli-wrap');
+  if(wrap){wrap.parentElement.insertBefore(span,wrap);wrap.remove();}
+}
+
+async function vknSorgula(){
+  let vkn=document.getElementById('vknInp').value.trim();
+  let sonuc=document.getElementById('vknSonuc');
+  if(!vkn||(vkn.length!==10&&vkn.length!==11)){sonuc.style.display='inline-block';sonuc.style.color='#dc3545';sonuc.innerHTML='⚠️ 10 veya 11 haneli numara girin';return;}
+  sonuc.style.display='inline-block';sonuc.style.color='#333';sonuc.innerHTML='⏳ Sorgulanıyor...';
+  try{
+    let res=await fetch('https://api.mukellef.info/v2/query.php?taxNumber='+vkn,{headers:{'ApiKey':'d0f09c37-0525-4ebe-91bf-751721c2abda'}});
+    let json=await res.json();
+    if(json.isError||!json.data){sonuc.innerHTML='❌ Bulunamadı';sonuc.style.color='#dc3545';return;}
+    let d=json.data;
+    let unvan=d.title||((d.firstName||'')+' '+(d.lastName||'')).trim();
+    sonuc.style.color='#333';
+    sonuc.innerHTML=`<b>${unvan}</b> &nbsp;|&nbsp; ${d.taxOfficeName||'-'} &nbsp;|&nbsp; ${d.isActive?'✅ AKTİF':'❌ PASİF'} &nbsp;|&nbsp; e-Fatura: ${d.eInvoiceResponsible?'✅':'❌'} &nbsp;|&nbsp; e-İrsaliye: ${d.eDespatchResponsible?'✅':'❌'}`;
+  }catch(e){sonuc.innerHTML='❌ Bağlantı hatası';sonuc.style.color='#dc3545';}
+}
+
+function refreshTable(){
+  const bR=document.getElementById('bR');
+  bR.innerHTML="";
+  if(!cart.length){manualBundleVal="";}
+
+  cart.forEach((item,i)=>{
+    let urunKodu=item[heads[0]]||'';
+    let itemCode=fixString(urunKodu);
+    let descContent=heads[1]?(linkMap[itemCode]?`<a href="${linkMap[itemCode]}" target="_blank" class="p-link">${item[heads[1]]}</a>`:item[heads[1]]):"";
+
+    let cells=`<td><button class="btn-del" onclick="removeItem(${i})">SİL</button><br>${urunKodu}</td>`;
+
+    heads.slice(1).forEach((h,hIdx)=>{
+      let excelVal=item[h];
+      let colIndex=hIdx+1;
+      let hT=h.toUpperCase();
+
+      if(hIdx===0){
+        cells+=`<td style="white-space:normal;">${descContent}</td>`;
+      } else if(hIdx===1){
+        // Horoz canlı sütunu
+        const stokInfo=getStokForHead(h,urunKodu,excelVal);
+        let spanClass=stokInfo.cls||'';
+        let spanHtml=`<span id="stok-val-${urunKodu}" class="${spanClass}">${stokInfo.val}</span>`;
+        if(stokInfo.dot){
+          cells+=`<td>${spanHtml}</td>`;
+        } else {
+          cells+=`<td>${spanHtml}</td>`;
+        }
+      } else if(hT.includes("BEKLEYEN")){
+        cells+=`<td>${excelVal||'0'}</td>`;
+      } else if(hT.includes("ONLINE")){
+        cells+=`<td class="t-online-col">${excelVal?Math.ceil(excelVal).toLocaleString('tr-TR')+' ₺':'-'}</td>`;
+      } else if(isWrapCol(hT)){
+        cells+=`<td class="wrap-col">${excelVal||'-'}</td>`;
+      } else {
+        // Stok sütunları (YILDIZ, CAM OFİS, vs ve TOPLAM)
+        const ambar=getAmbarForHead(h);
+        const isAmbar = ambar !== undefined;
+        const isToplamCol = isToplam(h);
+
+        if((isAmbar || isToplamCol) && canliStokAktif) {
+          const stokInfo=getStokForHead(h,urunKodu,excelVal);
+          cells+=`<td id="stok-ambar-${i}-${hIdx}">${stokInfo.val}</td>`;
+        } else if(colIndex>=priceStartIndex&&!isNaN(excelVal)&&excelVal!==""&&!hT.includes("STOK")){
+          cells+=`<td>${Math.ceil(excelVal).toLocaleString('tr-TR')+' ₺'}</td>`;
+        } else {
+          cells+=`<td>${excelVal||'-'}</td>`;
+        }
+      }
+    });
+
+    const tr=document.createElement('tr');
+    tr.innerHTML=cells;
+    bR.appendChild(tr);
+
+    // Horoz canlı pulse dot
+    if(canliStokAktif){
+      const span=document.getElementById('stok-val-'+urunKodu);
+      if(span){
+        _removePulseDot(span);
+        const stokInfo=getStokForHead(heads[2],urunKodu,item[heads[2]]);
+        if(stokInfo.dot) _addPulseDot(span,stokInfo.dotRed);
+      }
+    }
+  });
+  calc();
+}
+
+function renderHeader(){
+  document.getElementById('hR').innerHTML=
+    "<tr>"+heads.map(h=>{
+      let hT=h.toUpperCase();
+      let cls=isWrapCol(hT)?' class="wrap-col"':'';
+      let label=getHeadLabel(h);
+      return `<th${cls}>${label.split(/[\s\n]/).join('<br>')}</th>`;
+    }).join('')+"</tr>";
+}
+
+function calc(){
+  if(!cart.length){document.getElementById('fR').innerHTML="";return;}
+  let t={base:{},disc:0};
+  let bVal=parseFloat(manualBundleVal)||0;
+  cart.forEach(p=>{
+    t.disc+=(Math.ceil(p[bipCol])||0)+(Math.ceil(p[phCol])||0);
+    heads.forEach((h,i)=>{if(i>=priceStartIndex)t.base[i]=(t.base[i]||0)+(Math.ceil(parseFloat(p[h]))||0);});
+  });
+  document.getElementById('fR').innerHTML=`
+    <tr><td colspan="${firstFooterIdx}" class="f-title">TOPLAM LİSTE FİYATI</td>${renderCommonRow(t.base,'t-res')}</tr>
+    <tr><td colspan="${firstFooterIdx}" class="f-title">BİP İNDİRİMİ - (VARSA PHASE OUT)</td>${renderCommonRow(null,'t-res',t.disc)}</tr>
+    <tr><td colspan="${firstFooterIdx}" class="f-title" style="color:red;">TOPLAM BUNDLE HAK EDİŞİ</td>${renderBundleRow(bVal)}</tr>
+    <tr><td colspan="${firstFooterIdx}" class="f-title">SATILABİLİR MİNİMUM TUTAR</td>${renderFinalRow(t,bVal)}</tr>
+  `;
+}
+
+function renderCommonRow(data,cls,fixed){
+  return heads.map((h,i)=>{
+    if(i<firstFooterIdx)return"";
+    if(!isFooterCol(h.toUpperCase()))return"<td></td>";
+    let val=(fixed!==undefined)?fixed:(data[i]||0);
+    return`<td class="${cls}">${val>0?val.toLocaleString('tr-TR')+' ₺':'-'}</td>`;
+  }).join('');
+}
+
+function renderBundleRow(bVal){
+  return heads.map((h,i)=>{
+    if(i<firstFooterIdx)return"";
+    if(!isFooterCol(h.toUpperCase()))return"<td></td>";
+    if(h.toUpperCase().includes("HAVALE"))return`<td><input type="number" id="manualBundInp" placeholder="..Yazınız.." autocomplete="off" value="${manualBundleVal}" onkeydown="if(event.key==='Enter'){manualBundleVal=this.value;refreshTable();}" onblur="manualBundleVal=this.value;refreshTable();"></td>`;
+    return`<td style="color:red;white-space:normal;font-size:13px;">${bVal>0?bVal.toLocaleString('tr-TR')+' ₺':'-'}</td>`;
+  }).join('');
+}
+
+function renderFinalRow(t,bVal){
+  return heads.map((h,i)=>{
+    if(i<firstFooterIdx)return"";
+    if(!isFooterCol(h.toUpperCase()))return"<td></td>";
+    let res=(t.base[i]||0)-t.disc-bVal;
+    return`<td class="t-final">${res>0?res.toLocaleString('tr-TR')+' ₺':'-'}</td>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
