@@ -101,16 +101,16 @@ let stokTarihi = "";
 // Ambar eşleştirme: fiyat excel sütun keyword → stok xlsx ambar adı
 // Önce sütun başlığını keyword ile eşleştir
 const AMBAR_MAP = [
-  { keyword: /studioline.*horoz|horoz.*studioline/i, ambar: null },   // Excel'den oku
+  { keyword: /studioline.*horoz|horoz.*studioline/i, ambar: null },
   { keyword: /yildiz|yıldız/i,                        ambar: 'YILDIZ KULE DEPO' },
   { keyword: /cam\s*ofis\s*te[şs]hir/i,              ambar: 'CAM OFİS TEŞHİR' },
   { keyword: /cam\s*ofis/i,                            ambar: 'CAM OFİS' },
   { keyword: /studio.*cepa|cepa.*studio/i,             ambar: 'CEPA STUDYOLINE TEŞHİR' },
-  { keyword: /ankamall/i,                              ambar: 'ANKAMALL' },
-  { keyword: /\bcepa\b/i,                              ambar: 'CEPA' },
-  { keyword: /one\s*tower/i,                           ambar: 'ONE' },
+  { keyword: /ankamall/i,                              ambar: 'ANKAMALL SIEMENS' },
+  { keyword: /\bcepa\b/i,                              ambar: 'CEPA SIEMENS' },
+  { keyword: /one\s*tower/i,                           ambar: 'ONE TOWER' },
   { keyword: /panora/i,                                ambar: 'PANORA' },
-  { keyword: /optimum|opt[iı]mum/i,                   ambar: 'OPTIMUM' },
+  { keyword: /optimum|opt[iı]mum/i,                   ambar: 'OPTİMUM SİEMENS' },
   { keyword: /internet.*depo|depo.*internet/i,         ambar: 'İNTERNET DEPO' },
 ];
 
