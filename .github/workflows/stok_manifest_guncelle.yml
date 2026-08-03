@@ -1,0 +1,33 @@
+name: Stok Manifest Güncelle
+
+on:
+  push:
+    paths:
+      - '*_STOK.xlsx'
+
+permissions:
+  contents: write
+
+jobs:
+  manifest-guncelle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stok dosyasını bul ve manifest güncelle
+        run: |
+          STOK_FILE=$(ls *_STOK.xlsx 2>/dev/null | sort | tail -1)
+          if [ -z "$STOK_FILE" ]; then
+            echo "Stok dosyası bulunamadı"
+            exit 0
+          fi
+          echo "{\"fileName\": \"$STOK_FILE\"}" > stok_manifest.json
+          echo "Güncellendi: $STOK_FILE"
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add stok_manifest.json
+          git diff --staged --quiet || git commit -m "stok_manifest güncellendi"
+          git push
