@@ -229,7 +229,7 @@ def update_manifest():
     """GitHub API'ye gitmeden, repodaki güncel .xlsx dosyasının adını
     manifest.json'a yazar. index.html artık bu dosyayı okuyor."""
     try:
-        xlsx_files = [f for f in os.listdir(".") if f.lower().endswith(".xlsx")]
+        xlsx_files = [f for f in os.listdir(".") if f.lower().endswith(".xlsx") and "_stok" not in f.lower()]
         if not xlsx_files:
             log("manifest.json güncellenmedi: klasörde .xlsx dosyası yok.")
             return
