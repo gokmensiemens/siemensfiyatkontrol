@@ -501,7 +501,9 @@ function refreshTable(){
       } else if(hT.includes("BEKLEYEN")){
         cells+=`<td>${excelVal||'0'}</td>`;
       } else if(hT.includes("ONLINE")){
-        cells+=`<td class="t-online-col">${excelVal?Math.ceil(excelVal).toLocaleString('tr-TR')+' ₺':'-'}</td>`;
+        let onlineNum = parseFloat(excelVal);
+let onlineDisplay = excelVal ? (isNaN(onlineNum) ? excelVal : Math.ceil(onlineNum).toLocaleString('tr-TR')+' ₺') : '-';
+cells+=`<td class="t-online-col">${onlineDisplay}</td>`;
       } else if(isWrapCol(hT)){
         cells+=`<td class="wrap-col">${excelVal||'-'}</td>`;
       } else {
