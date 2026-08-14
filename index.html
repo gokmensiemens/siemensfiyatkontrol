@@ -502,9 +502,10 @@ function refreshTable(){
       } else if(hT.includes("BEKLEYEN")){
         cells+=`<td>${excelVal||'0'}</td>`;
       } else if(hT.includes("ONLINE")){
-        let onlineNum = parseFloat(excelVal);
-let onlineDisplay = excelVal ? (isNaN(onlineNum) ? excelVal : Math.ceil(onlineNum).toLocaleString('tr-TR')+' ₺') : '-';
-cells+=`<td class="t-online-col">${onlineDisplay}</td>`;
+  let onlineNum = parseFloat(excelVal);
+  let isText = excelVal && isNaN(onlineNum);
+  let onlineDisplay = excelVal ? (isText ? excelVal : Math.ceil(onlineNum).toLocaleString('tr-TR')+' ₺') : '-';
+  cells+=`<td class="t-online-col${isText ? ' wrap-text' : ''}">${onlineDisplay}</td>`;
       } else if(isWrapCol(hT)){
         cells+=`<td class="wrap-col">${excelVal||'-'}</td>`;
       } else {
