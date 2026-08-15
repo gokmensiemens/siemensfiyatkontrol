@@ -58,6 +58,15 @@
   </style>
 </head>
 <body>
+<div id="loginScreen" style="position:fixed;inset:0;background:#f0f2f5;z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:white;padding:30px 40px;border-radius:10px;box-shadow:0 2px 15px rgba(0,0,0,0.15);width:300px;">
+    <h3 style="margin-top:0;text-align:center;color:#333;">Giriş Yap</h3>
+    <input id="loginUser" type="text" placeholder="Kullanıcı Adı" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:10px;border:2px solid #ddd;border-radius:6px;font-size:14px;" oninput="this.value=this.value.toLowerCase()">
+    <input id="loginPass" type="password" placeholder="Şifre" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:10px;border:2px solid #ddd;border-radius:6px;font-size:14px;" oninput="this.value=this.value.toLowerCase()" onkeydown="if(event.key==='Enter') girisYap()">
+    <button onclick="girisYap()" style="width:100%;padding:10px;background:#007bff;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:14px;">Giriş</button>
+    <div id="loginError" style="color:#dc3545;font-size:12px;text-align:center;margin-top:8px;"></div>
+  </div>
+</div>
 <div class="card">
   <div style="margin-bottom:10px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
     <div><b>FİYAT LİSTESİ YÜKLENDİ:</b> <span id="statusMsg" style="font-weight:bold; color:#007bff;">Liste Yükleniyor, lütfen bekleyin...</span></div>
@@ -86,6 +95,32 @@
 </div>
 
 <script>
+const KULLANICILAR = {
+  "cepa": "ferhat",
+  "ankamall": "mücahit",
+  "panora": "emrah",
+  "optimum": "sevda",
+  "onetower": "hasan",
+  "merkez": "kaan"
+};
+
+function girisYap() {
+  const u = document.getElementById('loginUser').value.trim().toLowerCase();
+  const p = document.getElementById('loginPass').value;
+  if (KULLANICILAR[u] && KULLANICILAR[u] === p) {
+    sessionStorage.setItem('girisYapildi', '1');
+    document.getElementById('loginScreen').style.display = 'none';
+  } else {
+    document.getElementById('loginError').textContent = '❌ Kullanıcı adı veya şifre hatalı';
+  }
+}
+
+if (sessionStorage.getItem('girisYapildi') === '1') {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('loginScreen').style.display = 'none';
+  });
+}
+
 let db = [], cart = [], heads = [], manualBundleVal = "";
 let bipCol = "", phCol = "";
 let linkMap = {};
