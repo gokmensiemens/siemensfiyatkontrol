@@ -90,6 +90,16 @@
 </head>
 <body>
 
+<div id="loginScreen" style="position:fixed;inset:0;background:#f2f4f7;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;padding:28px 24px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);width:100%;max-width:320px;">
+    <h3 style="margin:0 0 16px;text-align:center;color:#222;">Giriş Yap</h3>
+    <input id="loginUser" type="text" placeholder="Kullanıcı Adı" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:12px;margin-bottom:10px;border:2px solid #ddd;border-radius:8px;font-size:16px;" oninput="this.value=this.value.toLowerCase()">
+    <input id="loginPass" type="password" placeholder="Şifre" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:12px;margin-bottom:10px;border:2px solid #ddd;border-radius:8px;font-size:16px;" oninput="this.value=this.value.toLowerCase()" onkeydown="if(event.key==='Enter') girisYap()">
+    <button onclick="girisYap()" style="width:100%;padding:12px;background:#007bff;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:16px;">Giriş</button>
+    <div id="loginError" style="color:#dc3545;font-size:13px;text-align:center;margin-top:8px;"></div>
+  </div>
+</div>
+
 <div class="topbar">
   <div class="topbar-title">⚡ Siemens Fiyat Kontrol</div>
   <div class="topbar-sub" id="statusMsg">Liste yükleniyor...</div>
@@ -122,6 +132,32 @@
 </div>
 
 <script>
+const KULLANICILAR = {
+  "cepa": "ferhat",
+  "ankamall": "mücahit",
+  "panora": "emrah",
+  "optimum": "sevda",
+  "onetower": "hasan",
+  "merkez": "kaan"
+};
+
+function girisYap() {
+  const u = document.getElementById('loginUser').value.trim().toLowerCase();
+  const p = document.getElementById('loginPass').value;
+  if (KULLANICILAR[u] && KULLANICILAR[u] === p) {
+    sessionStorage.setItem('girisYapildi', '1');
+    document.getElementById('loginScreen').style.display = 'none';
+  } else {
+    document.getElementById('loginError').textContent = '❌ Kullanıcı adı veya şifre hatalı';
+  }
+}
+
+if (sessionStorage.getItem('girisYapildi') === '1') {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('loginScreen').style.display = 'none';
+  });
+}
+
 let db = [], cart = [], heads = [];
 let priceStartIndex = 13;
 let bipCol = "", phCol = "";
