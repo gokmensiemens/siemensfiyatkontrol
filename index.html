@@ -71,6 +71,7 @@
   <div style="margin-bottom:10px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
     <div><b>FİYAT LİSTESİ YÜKLENDİ:</b> <span id="statusMsg" style="font-weight:bold; color:#007bff;">Liste Yükleniyor, lütfen bekleyin...</span></div>
     <div style="display:flex; align-items:center;">
+      <span id="oturumBilgi" style="font-size:11px; color:#555; margin-right:15px; white-space:nowrap;"></span>
       <button id="btnCanliStok" onclick="toggleStokMod()">📊 Excel Stoğuna Bak</button>
       <span id="stokGuncelMsg"></span>
       <span style="display:inline-block; width:40px; border-left:2px solid #ddd; margin:0 10px; height:24px; vertical-align:middle;"></span>
@@ -103,21 +104,39 @@ const KULLANICILAR = {
   "onetower": "hasan",
   "merkez": "kaan"
 };
+const GIRIS_SURESI_MS = 24 * 60 * 60 * 1000; // 24 saat
+
+function oturumBadgeGuncelle() {
+  const kalanMs = GIRIS_SURESI_MS - (Date.now() - parseInt(localStorage.getItem('girisZamani') || '0'));
+  const kullanici = localStorage.getItem('girisKullanici') || '';
+  const badge = document.getElementById('oturumBilgi');
+  if (!badge) return;
+  if (kalanMs > 0 && kullanici) {
+    const kalanSaat = Math.max(1, Math.ceil(kalanMs / (60 * 60 * 1000)));
+    badge.textContent = `Oturum Sahibi: ${kullanici.toUpperCase()} / Oturumunuz ${kalanSaat} saat geçerlidir`;
+  } else {
+    badge.textContent = '';
+  }
+}
 
 function girisYap() {
   const u = document.getElementById('loginUser').value.trim().toLowerCase();
   const p = document.getElementById('loginPass').value;
   if (KULLANICILAR[u] && KULLANICILAR[u] === p) {
-    sessionStorage.setItem('girisYapildi', '1');
+    localStorage.setItem('girisZamani', Date.now().toString());
+    localStorage.setItem('girisKullanici', u);
     document.getElementById('loginScreen').style.display = 'none';
+    oturumBadgeGuncelle();
   } else {
     document.getElementById('loginError').textContent = '❌ Kullanıcı adı veya şifre hatalı';
   }
 }
 
-if (sessionStorage.getItem('girisYapildi') === '1') {
+const girisZamani = parseInt(localStorage.getItem('girisZamani') || '0');
+if (Date.now() - girisZamani < GIRIS_SURESI_MS) {
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('loginScreen').style.display = 'none';
+    oturumBadgeGuncelle();
   });
 }
 
