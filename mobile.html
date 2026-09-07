@@ -104,6 +104,7 @@
   <div class="topbar-title">⚡ Siemens Fiyat Kontrol</div>
   <div class="topbar-sub" id="statusMsg">Liste yükleniyor...</div>
   <div id="oturumBilgi" style="font-size:.75rem;font-weight:800;color:#fff;background:#1976d2;display:inline-block;padding:3px 10px;border-radius:6px;margin-top:5px;"></div>
+  <button id="btnCikis" onclick="cikisYap()" style="display:none;font-size:.7rem;font-weight:700;color:#fff;background:#dc3545;border:none;padding:3px 10px;border-radius:6px;margin-top:5px;margin-left:6px;cursor:pointer;">Çıkış</button>
 </div>
 
 <div class="stok-bar">
@@ -134,11 +135,11 @@
 
 <script>
 const KULLANICILAR = {
-  "cepa": "ferhat",
-  "ankamall": "mücahit",
-  "panora": "emrah",
-  "optimum": "sevda",
-  "onetower": "hasan",
+  "cepa": "1285",
+  "ankamall": "198986",
+  "panora": "066089",
+  "optimum": "891216",
+  "onetower": "607075",
   "merkez": "kaan"
 };
 const GIRIS_SURESI_MS = 24 * 60 * 60 * 1000; // 24 saat
@@ -147,13 +148,26 @@ function oturumBadgeGuncelle() {
   const kalanMs = GIRIS_SURESI_MS - (Date.now() - parseInt(localStorage.getItem('girisZamani') || '0'));
   const kullanici = localStorage.getItem('girisKullanici') || '';
   const badge = document.getElementById('oturumBilgi');
+  const cikisBtn = document.getElementById('btnCikis');
   if (!badge) return;
   if (kalanMs > 0 && kullanici) {
     const kalanSaat = Math.max(1, Math.ceil(kalanMs / (60 * 60 * 1000)));
     badge.textContent = `Oturum Sahibi: ${kullanici.toUpperCase()} / Oturumunuz ${kalanSaat} saat geçerlidir`;
+    if (cikisBtn) cikisBtn.style.display = 'inline-block';
   } else {
     badge.textContent = '';
+    if (cikisBtn) cikisBtn.style.display = 'none';
   }
+}
+
+function cikisYap() {
+  localStorage.removeItem('girisZamani');
+  localStorage.removeItem('girisKullanici');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('loginScreen').style.display = 'flex';
+  oturumBadgeGuncelle();
 }
 
 function girisYap() {
