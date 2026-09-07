@@ -64,7 +64,8 @@
   <div style="margin-bottom:10px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
     <div><b>FİYAT LİSTESİ YÜKLENDİ:</b> <span id="statusMsg" style="font-weight:bold; color:#007bff;">Liste Yükleniyor, lütfen bekleyin...</span></div>
     <div style="display:flex; align-items:center;">
-      <span id="oturumBilgi" style="font-size:12px; font-weight:bold; color:#fff; background:#1976d2; padding:6px 12px; border-radius:6px; margin-right:15px; white-space:nowrap;"></span>
+      <span id="oturumBilgi" style="font-size:12px; font-weight:bold; color:#fff; background:#1976d2; padding:6px 12px; border-radius:6px; margin-right:6px; white-space:nowrap;"></span>
+      <button id="btnCikis" onclick="cikisYap()" style="display:none; background:#dc3545; color:#fff; border:none; border-radius:6px; padding:6px 12px; font-size:12px; font-weight:bold; cursor:pointer; margin-right:15px; white-space:nowrap;">Çıkış</button>
       <button id="btnCanliStok" onclick="toggleStokMod()">📊 Excel Stoğuna Bak</button>
       <span id="stokGuncelMsg"></span>
       <span style="display:inline-block; width:40px; border-left:2px solid #ddd; margin:0 10px; height:24px; vertical-align:middle;"></span>
@@ -93,7 +94,7 @@ const KULLANICILAR = {
   "cepa": "1285",
   "ankamall": "198986",
   "panora": "066089",
-  "optimum": "sevda",
+  "optimum": "891216",
   "onetower": "607075",
   "merkez": "kaan"
 };
@@ -103,13 +104,26 @@ function oturumBadgeGuncelle() {
   const kalanMs = GIRIS_SURESI_MS - (Date.now() - parseInt(localStorage.getItem('girisZamani') || '0'));
   const kullanici = localStorage.getItem('girisKullanici') || '';
   const badge = document.getElementById('oturumBilgi');
+  const cikisBtn = document.getElementById('btnCikis');
   if (!badge) return;
   if (kalanMs > 0 && kullanici) {
     const kalanSaat = Math.max(1, Math.ceil(kalanMs / (60 * 60 * 1000)));
     badge.textContent = `Oturum Sahibi: ${kullanici.toUpperCase()} / Oturumunuz ${kalanSaat} saat geçerlidir`;
+    if (cikisBtn) cikisBtn.style.display = 'inline-block';
   } else {
     badge.textContent = '';
+    if (cikisBtn) cikisBtn.style.display = 'none';
   }
+}
+
+function cikisYap() {
+  localStorage.removeItem('girisZamani');
+  localStorage.removeItem('girisKullanici');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('loginScreen').style.display = 'flex';
+  oturumBadgeGuncelle();
 }
 
 function girisYap() {
