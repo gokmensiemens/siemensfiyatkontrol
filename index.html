@@ -98,7 +98,7 @@ const KULLANICILAR = {
   "onetower": "607075",
   "merkez": "kaan"
 };
-const GIRIS_SURESI_MS = 24 * 60 * 60 * 1000; // 24 saat
+const GIRIS_SURESI_MS = 24 * 60 * 60 * 1000;
 
 function oturumBadgeGuncelle() {
   const kalanMs = GIRIS_SURESI_MS - (Date.now() - parseInt(localStorage.getItem('girisZamani') || '0'));
@@ -155,14 +155,9 @@ let priceStartIndex = 13;
 let firstFooterIdx = 13;
 let canliStokAktif = true;
 
-// Stok xlsx'ten okunan ambar verileri: { urunKodu: { ambarKey: miktar } }
 let stokXlsxData = {};
-// Stok dosyasının tarihi (başlık için)
 let stokTarihi = "";
 
-// Ambar eşleştirme: fiyat excel sütun keyword → stok xlsx ambar adı
-// Önce sütun başlığını keyword ile eşleştir
-// Ambar eşleştirme — sütun adını normalize edip karşılaştır
 function getAmbarForHead(h) {
   const n = h.toUpperCase()
     .replace(/İ/g,'I').replace(/Ğ/g,'G').replace(/Ü/g,'U')
@@ -181,9 +176,8 @@ function getAmbarForHead(h) {
   if (/INTERNET.*DEPO/.test(n)) return 'İNTERNET DEPO';
   return undefined;
 }
-const AMBAR_MAP = []; // artık kullanılmıyor, getAmbarForHead direkt çağrılıyor
+const AMBAR_MAP = [];
 
-// Horoz canlı sütunu (Studioline hariç ilk HOROZ sütunu)
 function isHorozCanli(h) {
   const hU = h.toUpperCase();
   return hU.includes('HOROZ') && !(/STUDIOLINE/i.test(h));
@@ -215,7 +209,6 @@ function fullReset() {
   closeAllLists();
 }
 
-// Tarih string'ini Türkçe'ye çevir: "01_08_2026" → "1 AĞUSTOS"
 function dosyaAdindanTarih(fileName) {
   const aylar = ['','OCAK','ŞUBAT','MART','NİSAN','MAYIS','HAZİRAN','TEMMUZ','AĞUSTOS','EYLÜL','EKİM','KASIM','ARALIK'];
   const m = fileName.match(/(\d{1,2})[_\-\s](\d{1,2})[_\-\s](\d{4})/);
@@ -225,7 +218,6 @@ function dosyaAdindanTarih(fileName) {
   return `${gun} ${aylar[ay] || m[2]}`;
 }
 
-// Stok xlsx yükle
 async function stokXlsxYukle() {
   try {
     const mRes = await fetch('./stok_manifest.json?_=' + Date.now());
@@ -238,10 +230,8 @@ async function stokXlsxYukle() {
     const buf = await (await fetch('./' + manifest.fileName + '?_=' + Date.now())).arrayBuffer();
     const wb = XLSX.read(buf, {type:'array'});
     const ws = wb.Sheets[wb.SheetNames[0]];
-    // 1. satır rapor adı, 2. satır başlık — raw array oku
     const rawRows = XLSX.utils.sheet_to_json(ws, {defval:"", header:1});
     if (rawRows.length < 2) return;
-    // Başlık satırını dinamik bul
     let headerIdx = rawRows.findIndex(r => Array.isArray(r) && r.indexOf('Malzeme (Sınıfı) Kodu') >= 0);
     if (headerIdx < 0) { console.log('Başlık satırı bulunamadı'); return; }
     const headerRow = rawRows[headerIdx];
@@ -267,43 +257,34 @@ async function stokXlsxYukle() {
   }
 }
 
-// Bir ürün kodu için belirli ambarın stok miktarını getir
 function getAmbarStok(urunKodu, ambarAdi) {
   if (!stokXlsxData[urunKodu]) return 0;
   return stokXlsxData[urunKodu][ambarAdi.toUpperCase()] || 0;
 }
 
-// Sütun için stok değerini hesapla
 function getStokForHead(h, urunKodu, excelVal) {
   if (!canliStokAktif) return { val: excelVal !== undefined && excelVal !== '' ? excelVal : '-', dot: false, dotRed: false };
 
   const hU = h.toUpperCase();
 
-  // Horoz canlı (Studioline hariç)
   if (isHorozCanli(h)) {
     const canli = window._stokJson ? (window._stokJson[urunKodu] ?? null) : null;
     const v = canli === null ? 0 : canli;
     return { val: v, dot: true, dotRed: v === 0, cls: v > 0 ? 'stok-canli' : 'stok-sifir' };
   }
 
-  // TOPLAM STOK
   if (isToplam(h)) {
     const horozCanli = window._stokJson ? (window._stokJson[urunKodu] ?? 0) : 0;
     let toplam = horozCanli;
-    // Diğer tüm ambarları topla
     if (stokXlsxData[urunKodu]) {
       Object.values(stokXlsxData[urunKodu]).forEach(v => toplam += v);
     }
     return { val: toplam, dot: false };
   }
 
-  // Ambar eşleştirmesi
   const ambar = getAmbarForHead(h);
   if (ambar === undefined) return { val: excelVal !== undefined && excelVal !== '' ? excelVal : '-', dot: false };
   if (ambar === null) {
-    // Studioline — xlsx'ten oku ama ambar adı nedir?
-    // "CEPA STUDYOLINE TEŞHİR" değil, "CEPA STUDYOLINE" olabilir — direkt stokXlsxData'ya bakacağız
-    // Studioline Horoz için stokXlsxData'da studioline ambarı olmadığından excelden oku
     return { val: excelVal !== undefined && excelVal !== '' ? excelVal : '-', dot: false };
   }
 
@@ -311,7 +292,6 @@ function getStokForHead(h, urunKodu, excelVal) {
   return { val: v, dot: false };
 }
 
-// Sütun başlığını mod'a göre güncelle
 function getHeadLabel(h) {
   if (!canliStokAktif) return h;
   const hU = h.toUpperCase();
@@ -323,9 +303,7 @@ function getHeadLabel(h) {
   const ambar = getAmbarForHead(h);
   if (ambar === undefined || ambar === null) return h;
 
-  // Başlığa tarihi ekle
   if (!stokTarihi) return h;
-  // Sütun adından baştaki tarih+ay kısmını temizle
   const kisaAd = h.replace(/^\d+\s*(OCAK|ŞUBAT|MART|NİSAN|MAYIS|HAZİRAN|TEMMUZ|AĞUSTOS|EYLÜL|EKİM|KASIM|ARALIK)\s*/i, '').trim();
   if (ambar === null) return h;
   return `${stokTarihi}\n${kisaAd}`;
@@ -369,7 +347,6 @@ async function toggleStokMod() {
 }
 
 window.onload = async function() {
-  // Horoz stok.json ve stok xlsx'i paralel yükle
   const [stokRes] = await Promise.allSettled([
     fetch('./stok.json?_=' + Date.now()).then(r => r.ok ? r.json() : {}),
     stokXlsxYukle()
@@ -551,7 +528,6 @@ function refreshTable(){
       if(hIdx===0){
         cells+=`<td style="white-space:normal;">${descContent}</td>`;
       } else if(hIdx===1){
-        // Horoz canlı sütunu
         const stokInfo=getStokForHead(h,urunKodu,excelVal);
         let spanClass=stokInfo.cls||'';
         let spanHtml=`<span id="stok-val-${urunKodu}" class="${spanClass}">${stokInfo.val}</span>`;
@@ -570,7 +546,6 @@ function refreshTable(){
       } else if(isWrapCol(hT)){
         cells+=`<td class="wrap-col">${excelVal||'-'}</td>`;
       } else {
-        // Stok sütunları (YILDIZ, CAM OFİS, vs ve TOPLAM)
         const ambar=getAmbarForHead(h);
         const isAmbar = ambar !== undefined;
         const isToplamCol = isToplam(h);
@@ -590,7 +565,6 @@ function refreshTable(){
     tr.innerHTML=cells;
     bR.appendChild(tr);
 
-    // Horoz canlı pulse dot
     if(canliStokAktif){
       const span=document.getElementById('stok-val-'+urunKodu);
       if(span){
