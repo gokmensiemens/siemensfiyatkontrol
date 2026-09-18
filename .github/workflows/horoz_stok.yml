@@ -1,8 +1,6 @@
 name: Horoz Stok Güncelle
 
 on:
-  schedule:
-    - cron: '01,16,31,46 6-19 * * *'
   workflow_dispatch:
   push:
     paths:
