@@ -579,13 +579,25 @@ function refreshTable(){
   calc();
 }
 
+function urunleriKopyala(){
+  if(!cart.length){ alert('Kopyalanacak ürün yok, önce ürün ekleyin.'); return; }
+  const satirlar = cart.map(item => `${item[heads[0]]||''}\t${item[heads[1]]||''}`);
+  const metin = satirlar.join('\n');
+  navigator.clipboard.writeText(metin).then(()=>{
+    alert(`${cart.length} ürün panoya kopyalandı. Excel'de ilgili hücreye yapıştırabilirsiniz (kod ve açıklama otomatik ayrı sütunlara düşer).`);
+  }).catch(()=>{
+    alert('Kopyalama başarısız oldu, tarayıcı izni gerekebilir.');
+  });
+}
+
 function renderHeader(){
   document.getElementById('hR').innerHTML=
-    "<tr>"+heads.map(h=>{
+    "<tr>"+heads.map((h,idx)=>{
       let hT=h.toUpperCase();
       let cls=isWrapCol(hT)?' class="wrap-col"':'';
       let label=getHeadLabel(h);
-      return `<th${cls}>${label.split(/[\s\n]/).join('<br>')}</th>`;
+      let btn = idx===0 ? `<br><button onclick="urunleriKopyala()" style="margin-top:4px;background:#28a745;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">📋 Kopyala</button>` : '';
+      return `<th${cls}>${label.split(/[\s\n]/).join('<br>')}${btn}</th>`;
     }).join('')+"</tr>";
 }
 
