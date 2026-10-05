@@ -24,11 +24,6 @@
     .topbar { background:var(--blue); color:#fff; padding:12px 16px 10px; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,.2); }
     .topbar-title { font-size:1.1rem; font-weight:800; }
     .topbar-sub { font-size:.75rem; opacity:.8; margin-top:1px; }
-    .stok-bar { padding:10px 12px 6px; }
-    #btnCanliStok { width:100%; background:#9C1936; color:#fff; border:none; border-radius:var(--r); padding:14px; font-size:1rem; font-weight:700; cursor:pointer; letter-spacing:.3px; }
-    #btnCanliStok.mode-excel { background:#1976d2; }
-    #btnCanliStok:disabled { opacity:.55; }
-    #stokGuncelMsg { text-align:center; font-size:.8rem; color:var(--muted); min-height:20px; padding:3px 0 0; }
     .search-bar { padding:8px 12px 10px; display:flex; gap:8px; align-items:center; }
     #barcodeInp { flex:1; min-width:0; padding:14px 12px; border:2.5px solid var(--blue); border-radius:var(--r); font-size:1rem; font-weight:600; background:#fffde7; color:var(--text); -webkit-appearance:none; }
     #barcodeInp:focus { outline:none; border-color:#0056b3; }
@@ -105,11 +100,6 @@
   <div class="topbar-sub" id="statusMsg">Liste yükleniyor...</div>
   <div id="oturumBilgi" style="font-size:.75rem;font-weight:800;color:#fff;background:#1976d2;display:inline-block;padding:3px 10px;border-radius:6px;margin-top:5px;"></div>
   <button id="btnCikis" onclick="cikisYap()" style="display:none;font-size:.7rem;font-weight:700;color:#fff;background:#dc3545;border:none;padding:3px 10px;border-radius:6px;margin-top:5px;margin-left:6px;cursor:pointer;">Çıkış</button>
-</div>
-
-<div class="stok-bar">
-  <button id="btnCanliStok" onclick="toggleStokMod()">🔄 Horoz Lojistik Canlı Stoğuna Bak</button>
-  <div id="stokGuncelMsg"></div>
 </div>
 
 <div class="search-bar">
@@ -221,15 +211,6 @@ window.onload = async function() {
     window._stokJson = r.ok ? await r.json() : {};
   } catch { window._stokJson = {}; }
 
-  // Butonu Horoz modu olarak ayarla
-  const btn = document.getElementById('btnCanliStok');
-  btn.textContent = '📊 Excel Stoğuna Bak';
-  btn.classList.add('mode-excel');
-  if (window._stokJson && Object.keys(window._stokJson).length > 0) {
-    document.getElementById('stokGuncelMsg').textContent =
-      `✅ ${Object.keys(window._stokJson).length} ürün güncellendi (${new Date().toLocaleTimeString('tr-TR')})`;
-  }
-
   try {
     const manifestRes = await fetch('./manifest.json?_=' + Date.now());
     if (!manifestRes.ok) throw new Error("manifest.json bulunamadı");
@@ -278,43 +259,6 @@ window.onload = async function() {
     document.getElementById('statusMsg').textContent = '⚠️ ' + e.message;
   }
 };
-
-/* ── TOGGLE STOK MOD ── */
-async function toggleStokMod() {
-  const btn = document.getElementById('btnCanliStok');
-  const msg = document.getElementById('stokGuncelMsg');
-
-  if (canliStokAktif) {
-    // Horoz → Excel
-    canliStokAktif = false;
-    btn.textContent = '🔄 Horoz Lojistik Canlı Stoğuna Bak';
-    btn.classList.remove('mode-excel');
-    msg.textContent = '';
-    refreshCart();
-  } else {
-    // Excel → Horoz
-    canliStokAktif = true;
-    btn.textContent = '📊 Excel Stoğuna Bak';
-    btn.classList.add('mode-excel');
-    btn.disabled = true;
-    msg.textContent = '⏳ Yükleniyor...';
-    try {
-      const res = await fetch('./stok.json?_=' + Date.now());
-      if (!res.ok) throw new Error();
-      window._stokJson = await res.json();
-    } catch {
-      msg.textContent = '❌ Stok verisi alınamadı';
-      btn.disabled = false;
-      canliStokAktif = false;
-      btn.textContent = '🔄 Horoz Lojistik Canlı Stoğuna Bak';
-      btn.classList.remove('mode-excel');
-      return;
-    }
-    msg.textContent = `✅ ${Object.keys(window._stokJson).length} ürün güncellendi (${new Date().toLocaleTimeString('tr-TR')})`;
-    btn.disabled = false;
-    refreshCart();
-  }
-}
 
 /* ── SEARCH ── */
 function initSearch() {
@@ -426,9 +370,14 @@ function refreshCart() {
       if(idx<priceStartIndex)return;
       const hT=h.toUpperCase();
       if(isWrapCol(hT))return;
-      const v=item[h];const val=fmtPara(v);if(!val)return;
+      const v=item[h];let val=fmtPara(v);let isTxt=false;
+      if(!val){
+        const t=String(v===undefined||v===null?'':v).trim();
+        if(t&&t!=='-'&&isNaN(parseFloat(t))){val=t;isTxt=true;}else return;
+      }
       const cls=isFooterCol(hT)?'price-row pr-footer':'price-row';
-      priceHTML+=`<div class="${cls}"><span class="pr-label">${h}</span><span class="pr-val">${val}</span></div>`;
+      const valStyle=isTxt?' style="font-size:.95rem;text-align:right;max-width:60%;white-space:normal;"':'';
+      priceHTML+=`<div class="${cls}"><span class="pr-label">${h}</span><span class="pr-val"${valStyle}>${val}</span></div>`;
     });
 
     const dotHTML = showDot
