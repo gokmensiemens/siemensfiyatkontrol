@@ -85,13 +85,13 @@ td.wrap-text { white-space: normal !important; overflow: visible !important; lin
 </div>
 
 <script>
-const KULLANICILAR = {
-  "cepa": "1285",
-  "ankamall": "198986",
-  "panora": "066089",
-  "optimum": "891216",
-  "onetower": "607075",
-  "merkez": "kaan"
+const KULLANICI_HASH = {
+  "cepa": "0d26bb4414555734a27f2b7f17be83e0e7e86205fa9cb4857283cd600d1d6208",
+  "ankamall": "eb9da5ec86d22208542d7eb5d714a13135c209460a5a73f0c4e1d61a6d09436e",
+  "panora": "2534ae5f99fb8b1f0a7fa79030ea09fd59530ed01e24f0fcdf0faa046ffcf0f1",
+  "optimum": "642a8fb82ec1797db954ab0096f6cfb90165bdd453af3ccfa95a6210c0abb7d1",
+  "onetower": "7a82b6072f54428067570168e824274e5b29989b59989d62dd49fc7c18a2d2f5",
+  "merkez": "9ffc2c20a283c2e5253eae42a74a111e650f62ccc5922b5401a6e8b7fb70d6e0"
 };
 const GIRIS_SURESI_MS = 24 * 60 * 60 * 1000;
 
@@ -121,10 +121,15 @@ function cikisYap() {
   oturumBadgeGuncelle();
 }
 
-function girisYap() {
+async function sha256Hex(s) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+async function girisYap() {
   const u = document.getElementById('loginUser').value.trim().toLowerCase();
   const p = document.getElementById('loginPass').value;
-  if (KULLANICILAR[u] && KULLANICILAR[u] === p) {
+  const hh = await sha256Hex('sk1|' + u + '|' + p);
+  if (KULLANICI_HASH[u] && KULLANICI_HASH[u] === hh) {
     localStorage.setItem('girisZamani', Date.now().toString());
     localStorage.setItem('girisKullanici', u);
     document.getElementById('loginScreen').style.display = 'none';
